@@ -26,7 +26,7 @@ class PatternBlockSmall(nn.Module):
         middle_channels = 32
         resblock_channels = 32
         self.linear_relu_stack = nn.Sequential(
-            nn.Conv1d(pattern_size * input_channels, resblock_channels, 1),
+            nn.Conv1d(pattern_size * input_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
             nn.Conv1d(resblock_channels, middle_channels, 1),
@@ -34,10 +34,10 @@ class PatternBlockSmall(nn.Module):
         self.res_block_1 = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
             nn.ReLU(),
-            nn.Conv1d(middle_channels, resblock_channels, 1),
+            nn.Conv1d(middle_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, resblock_channels, 1),
+            nn.Conv1d(resblock_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
             nn.Conv1d(resblock_channels, middle_channels, 1),
@@ -45,10 +45,10 @@ class PatternBlockSmall(nn.Module):
         self.res_block_2 = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
             nn.ReLU(),
-            nn.Conv1d(middle_channels, resblock_channels, 1),
+            nn.Conv1d(middle_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, resblock_channels, 1),
+            nn.Conv1d(resblock_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
             nn.Conv1d(resblock_channels, middle_channels, 1),
@@ -56,9 +56,7 @@ class PatternBlockSmall(nn.Module):
         self.last_block = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
             nn.ReLU(),
-            nn.Conv1d(middle_channels, output_channels, 1),
-            nn.BatchNorm1d(output_channels),
-            nn.ReLU(),
+            nn.Conv1d(middle_channels, output_channels, 1, bias=False),
         )
 
     def forward(self, x):
@@ -78,7 +76,7 @@ class PatternBlockLarge(nn.Module):
         middle_channels = 64
         resblock_channels = 128
         self.linear_relu_stack = nn.Sequential(
-            nn.Conv1d(pattern_size * input_channels, resblock_channels, 1),
+            nn.Conv1d(pattern_size * input_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
             nn.Conv1d(resblock_channels, middle_channels, 1),
@@ -86,10 +84,10 @@ class PatternBlockLarge(nn.Module):
         self.res_block_1 = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
             nn.ReLU(),
-            nn.Conv1d(middle_channels, resblock_channels, 1),
+            nn.Conv1d(middle_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, resblock_channels, 1),
+            nn.Conv1d(resblock_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
             nn.Conv1d(resblock_channels, middle_channels, 1),
@@ -97,10 +95,10 @@ class PatternBlockLarge(nn.Module):
         self.res_block_2 = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
             nn.ReLU(),
-            nn.Conv1d(middle_channels, resblock_channels, 1),
+            nn.Conv1d(middle_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, resblock_channels, 1),
+            nn.Conv1d(resblock_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
             nn.Conv1d(resblock_channels, middle_channels, 1),
@@ -108,9 +106,7 @@ class PatternBlockLarge(nn.Module):
         self.last_block = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
             nn.ReLU(),
-            nn.Conv1d(middle_channels, output_channels, 1),
-            nn.BatchNorm1d(output_channels),
-            nn.ReLU(),
+            nn.Conv1d(middle_channels, output_channels, 1, bias=False),
         )
 
     def forward(self, x):
@@ -128,23 +124,43 @@ class PatternBasedSmall(nn.Module):
         self.flatten = nn.Flatten()
         self.patterns = generate_patterns()
         input_channels = 2
-        self.frontend_block_0 = PatternBlockSmall(10, input_channels, middle_channel_expansion)
-        self.frontend_block_1 = PatternBlockSmall(8, input_channels, middle_channel_expansion)
-        self.frontend_block_2 = PatternBlockSmall(8, input_channels, middle_channel_expansion)
-        self.frontend_block_3 = PatternBlockSmall(8, input_channels, middle_channel_expansion)
-        self.frontend_block_4 = PatternBlockSmall(10, input_channels, middle_channel_expansion)
-        self.frontend_block_5 = PatternBlockSmall(10, input_channels, middle_channel_expansion)
-        self.frontend_block_6 = PatternBlockSmall(9, input_channels, middle_channel_expansion)
-        self.frontend_block_7 = PatternBlockSmall(6, input_channels, middle_channel_expansion)
-        self.frontend_block_8 = PatternBlockSmall(7, input_channels, middle_channel_expansion)
-        self.frontend_block_9 = PatternBlockSmall(8, input_channels, middle_channel_expansion)
+        self.frontend_block_0 = PatternBlockSmall(
+            10, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_1 = PatternBlockSmall(
+            8, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_2 = PatternBlockSmall(
+            8, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_3 = PatternBlockSmall(
+            8, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_4 = PatternBlockSmall(
+            10, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_5 = PatternBlockSmall(
+            10, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_6 = PatternBlockSmall(
+            9, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_7 = PatternBlockSmall(
+            6, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_8 = PatternBlockSmall(
+            7, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_9 = PatternBlockSmall(
+            8, input_channels, middle_channel_expansion
+        )
         self.backend_block = nn.Sequential(
             nn.BatchNorm1d(middle_channel_expansion),
             nn.ReLU(),
-            nn.Linear(middle_channel_expansion, middle_channel_expansion),
+            nn.Linear(middle_channel_expansion, middle_channel_expansion, bias=False),
             nn.BatchNorm1d(middle_channel_expansion),
             nn.ReLU(),
-            nn.Linear(middle_channel_expansion, middle_channel_expansion),
+            nn.Linear(middle_channel_expansion, middle_channel_expansion, bias=False),
             nn.BatchNorm1d(middle_channel_expansion),
             nn.ReLU(),
             nn.Linear(middle_channel_expansion, 1),
@@ -160,16 +176,16 @@ class PatternBasedSmall(nn.Module):
         x47 = torch.flip(x03, [4])
         x07 = torch.cat((x03, x47), dim=1)
         vx = torch.reshape(x07, [-1, 8, 2, 64])
-        m0 = self.frontend_block_0(vx[:,:,:,self.patterns[0]])
-        m1 = self.frontend_block_1(vx[:,:,:,self.patterns[1]])
-        m2 = self.frontend_block_2(vx[:,:,:,self.patterns[2]])
-        m3 = self.frontend_block_3(vx[:,:,:,self.patterns[3]])
-        m4 = self.frontend_block_4(vx[:,:,:,self.patterns[4]])
-        m5 = self.frontend_block_5(vx[:,:,:,self.patterns[5]])
-        m6 = self.frontend_block_6(vx[:,:,:,self.patterns[6]])
-        m7 = self.frontend_block_7(vx[:,:,:,self.patterns[7]])
-        m8 = self.frontend_block_8(vx[:,:,:,self.patterns[8]])
-        m9 = self.frontend_block_9(vx[:,:,:,self.patterns[9]])
+        m0 = self.frontend_block_0(vx[:, :, :, self.patterns[0]])
+        m1 = self.frontend_block_1(vx[:, :, :, self.patterns[1]])
+        m2 = self.frontend_block_2(vx[:, :, :, self.patterns[2]])
+        m3 = self.frontend_block_3(vx[:, :, :, self.patterns[3]])
+        m4 = self.frontend_block_4(vx[:, :, :, self.patterns[4]])
+        m5 = self.frontend_block_5(vx[:, :, :, self.patterns[5]])
+        m6 = self.frontend_block_6(vx[:, :, :, self.patterns[6]])
+        m7 = self.frontend_block_7(vx[:, :, :, self.patterns[7]])
+        m8 = self.frontend_block_8(vx[:, :, :, self.patterns[8]])
+        m9 = self.frontend_block_9(vx[:, :, :, self.patterns[9]])
         m = torch.cat((m0, m1, m2, m3, m4, m5, m6, m7, m8, m9), dim=2)
         m = torch.transpose(m, 1, 2)
         m = torch.sum(m, 1)
@@ -183,26 +199,46 @@ class PatternBasedLarge(nn.Module):
         self.flatten = nn.Flatten()
         self.patterns = generate_patterns()
         input_channels = 2
-        self.frontend_block_0 = PatternBlockLarge(10, input_channels, middle_channel_expansion)
-        self.frontend_block_1 = PatternBlockLarge(8, input_channels, middle_channel_expansion)
-        self.frontend_block_2 = PatternBlockLarge(8, input_channels, middle_channel_expansion)
-        self.frontend_block_3 = PatternBlockLarge(8, input_channels, middle_channel_expansion)
-        self.frontend_block_4 = PatternBlockLarge(10, input_channels, middle_channel_expansion)
-        self.frontend_block_5 = PatternBlockLarge(10, input_channels, middle_channel_expansion)
-        self.frontend_block_6 = PatternBlockLarge(9, input_channels, middle_channel_expansion)
-        self.frontend_block_7 = PatternBlockLarge(6, input_channels, middle_channel_expansion)
-        self.frontend_block_8 = PatternBlockLarge(7, input_channels, middle_channel_expansion)
-        self.frontend_block_9 = PatternBlockLarge(8, input_channels, middle_channel_expansion)
+        self.frontend_block_0 = PatternBlockLarge(
+            10, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_1 = PatternBlockLarge(
+            8, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_2 = PatternBlockLarge(
+            8, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_3 = PatternBlockLarge(
+            8, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_4 = PatternBlockLarge(
+            10, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_5 = PatternBlockLarge(
+            10, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_6 = PatternBlockLarge(
+            9, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_7 = PatternBlockLarge(
+            6, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_8 = PatternBlockLarge(
+            7, input_channels, middle_channel_expansion
+        )
+        self.frontend_block_9 = PatternBlockLarge(
+            8, input_channels, middle_channel_expansion
+        )
         self.backend_block = nn.Sequential(
             nn.BatchNorm1d(middle_channel_expansion),
             nn.ReLU(),
-            nn.Linear(middle_channel_expansion, middle_channel_expansion),
+            nn.Linear(middle_channel_expansion, middle_channel_expansion, bias=False),
             nn.BatchNorm1d(middle_channel_expansion),
             nn.ReLU(),
-            nn.Linear(middle_channel_expansion, middle_channel_expansion),
+            nn.Linear(middle_channel_expansion, middle_channel_expansion, bias=False),
             nn.BatchNorm1d(middle_channel_expansion),
             nn.ReLU(),
-            nn.Linear(middle_channel_expansion, middle_channel_expansion),
+            nn.Linear(middle_channel_expansion, middle_channel_expansion, bias=False),
             nn.BatchNorm1d(middle_channel_expansion),
             nn.ReLU(),
             nn.Linear(middle_channel_expansion, 1),
@@ -218,16 +254,16 @@ class PatternBasedLarge(nn.Module):
         x47 = torch.flip(x03, [4])
         x07 = torch.cat((x03, x47), dim=1)
         vx = torch.reshape(x07, [-1, 8, 2, 64])
-        m0 = self.frontend_block_0(vx[:,:,:,self.patterns[0]])
-        m1 = self.frontend_block_1(vx[:,:,:,self.patterns[1]])
-        m2 = self.frontend_block_2(vx[:,:,:,self.patterns[2]])
-        m3 = self.frontend_block_3(vx[:,:,:,self.patterns[3]])
-        m4 = self.frontend_block_4(vx[:,:,:,self.patterns[4]])
-        m5 = self.frontend_block_5(vx[:,:,:,self.patterns[5]])
-        m6 = self.frontend_block_6(vx[:,:,:,self.patterns[6]])
-        m7 = self.frontend_block_7(vx[:,:,:,self.patterns[7]])
-        m8 = self.frontend_block_8(vx[:,:,:,self.patterns[8]])
-        m9 = self.frontend_block_9(vx[:,:,:,self.patterns[9]])
+        m0 = self.frontend_block_0(vx[:, :, :, self.patterns[0]])
+        m1 = self.frontend_block_1(vx[:, :, :, self.patterns[1]])
+        m2 = self.frontend_block_2(vx[:, :, :, self.patterns[2]])
+        m3 = self.frontend_block_3(vx[:, :, :, self.patterns[3]])
+        m4 = self.frontend_block_4(vx[:, :, :, self.patterns[4]])
+        m5 = self.frontend_block_5(vx[:, :, :, self.patterns[5]])
+        m6 = self.frontend_block_6(vx[:, :, :, self.patterns[6]])
+        m7 = self.frontend_block_7(vx[:, :, :, self.patterns[7]])
+        m8 = self.frontend_block_8(vx[:, :, :, self.patterns[8]])
+        m9 = self.frontend_block_9(vx[:, :, :, self.patterns[9]])
         m = torch.cat((m0, m1, m2, m3, m4, m5, m6, m7, m8, m9), dim=2)
         m = torch.transpose(m, 1, 2)
         m = torch.sum(m, 1)
