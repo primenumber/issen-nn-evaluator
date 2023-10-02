@@ -107,7 +107,7 @@ scheduler = torch.optim.lr_scheduler.LinearLR(
 loss_fn = nn.MSELoss()
 
 # batch_size = 128  # for PatternBasedLarge
-batch_size = 64  # for PatternBasedSmall
+batch_size = 256  # for PatternBasedSmall
 epochs = 20
 
 train_data_file = "workdir/dataset_221009_train.txt"
