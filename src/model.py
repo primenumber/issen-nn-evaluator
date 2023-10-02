@@ -29,7 +29,7 @@ class PatternBlockSmall(nn.Module):
             nn.Conv1d(pattern_size * input_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, middle_channels, 1),
+            nn.Conv1d(resblock_channels, middle_channels, 1, bias=False),
         )
         self.res_block_1 = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
@@ -40,7 +40,7 @@ class PatternBlockSmall(nn.Module):
             nn.Conv1d(resblock_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, middle_channels, 1),
+            nn.Conv1d(resblock_channels, middle_channels, 1, bias=False),
         )
         self.res_block_2 = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
@@ -51,7 +51,7 @@ class PatternBlockSmall(nn.Module):
             nn.Conv1d(resblock_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, middle_channels, 1),
+            nn.Conv1d(resblock_channels, middle_channels, 1, bias=False),
         )
         self.last_block = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
@@ -79,7 +79,7 @@ class PatternBlockLarge(nn.Module):
             nn.Conv1d(pattern_size * input_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, middle_channels, 1),
+            nn.Conv1d(resblock_channels, middle_channels, 1, bias=False),
         )
         self.res_block_1 = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
@@ -90,7 +90,7 @@ class PatternBlockLarge(nn.Module):
             nn.Conv1d(resblock_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, middle_channels, 1),
+            nn.Conv1d(resblock_channels, middle_channels, 1, bias=False),
         )
         self.res_block_2 = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
@@ -101,7 +101,7 @@ class PatternBlockLarge(nn.Module):
             nn.Conv1d(resblock_channels, resblock_channels, 1, bias=False),
             nn.BatchNorm1d(resblock_channels),
             nn.ReLU(),
-            nn.Conv1d(resblock_channels, middle_channels, 1),
+            nn.Conv1d(resblock_channels, middle_channels, 1, bias=False),
         )
         self.last_block = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
