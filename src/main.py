@@ -1,5 +1,6 @@
 import time
 import random
+from typing import Optional
 
 import torch
 from torch import nn
@@ -12,10 +13,13 @@ print(f"Using {device} device")
 
 
 class ReversiDataset(Dataset):
-    def __init__(self, dataset_file: str, stone_filter: set[int]):
+    def __init__(
+        self, dataset_file: str, stone_filter: set[int], limit: Optional[int] = None
+    ):
         with open(dataset_file) as f:
             n = int(f.readline())
-            # n = min(n, 16777216)
+            if limit is not None:
+                n = min(n, limit)
             players = []
             opponents = []
             scores = []
@@ -113,8 +117,8 @@ test_data_file = "workdir/dataset_221009_test.txt"
 # train_data = ReversiDataset(train_data_file, stones_filter)
 # test_data = ReversiDataset(test_data_file, stones_filter)
 stones_filter = {i for i in range(14, 60)}
-train_data = ReversiDataset(train_data_file, stones_filter)
-test_data = ReversiDataset(test_data_file, stones_filter)
+train_data = ReversiDataset(train_data_file, stones_filter, 16777216)
+test_data = ReversiDataset(test_data_file, stones_filter, 16777216)
 
 train_dataloader = DataLoader(
     train_data, batch_size=batch_size, shuffle=True, num_workers=8
