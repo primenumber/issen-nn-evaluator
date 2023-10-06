@@ -111,7 +111,6 @@ def test_loop(dataloader, model, loss_fn):
 
 # model = PatternBasedLarge(32).to(device)
 model = PatternBasedSmall(8).to(device)
-print(model)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
