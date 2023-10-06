@@ -5,6 +5,8 @@ from typing import Optional
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
+import numpy as np
+
 from model import PatternBasedLarge, PatternBasedSmall
 
 
@@ -35,19 +37,18 @@ class ReversiDataset(Dataset):
                 players.append(player)
                 opponents.append(opponent)
                 scores.append(score)
-        self._players = players
-        self._opponents = opponents
-        self._scores = scores
+        self._players = np.array(players, dtype=np.uint64)
+        self._opponents = np.array(opponents, dtype=np.uint64)
+        self._scores = np.array(scores, dtype=np.int32)
 
     def __len__(self):
         return len(self._scores)
 
     def __getitem__(self, idx: int):
-        global device
         player_bits = list(map(int, format(self._players[idx], "064b")))
         opponent_bits = list(map(int, format(self._opponents[idx], "064b")))
-        X = torch.zeros([2, 64])
-        y = torch.zeros([1])
+        X = torch.zeros([2, 64], dtype=dtype)
+        y = torch.zeros([1], dtype=dtype)
         X[0] = torch.tensor(player_bits, dtype=torch.int32)
         X[1] = torch.tensor(opponent_bits, dtype=torch.int32)
         X = torch.reshape(X, [2, 8, 8])
