@@ -1,3 +1,4 @@
+import os
 import time
 import random
 from typing import Optional
@@ -9,10 +10,21 @@ import numpy as np
 
 from model import PatternBasedLarge, PatternBasedSmall
 
+use_ipex = "USE_IPEX" in os.environ
+if use_ipex:
+    import intel_extension_for_pytorch as ipex
+    print(ipex.xpu.get_device_name(0))
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+if use_ipex:
+    device = "xpu"
+elif torch.cuda.is_available():
+    device = "cuda"
+else:
+    device = "cpu"
+
 print(f"Using {device} device")
 
+dtype=torch.float32
 
 class ReversiDataset(Dataset):
     def __init__(
@@ -102,6 +114,10 @@ model = PatternBasedSmall(8).to(device)
 print(model)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+if use_ipex:
+    model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
+
 scheduler = torch.optim.lr_scheduler.LinearLR(
     optimizer, start_factor=0.03, end_factor=1.0, total_iters=5
 )
