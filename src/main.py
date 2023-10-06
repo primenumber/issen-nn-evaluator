@@ -38,8 +38,8 @@ class ReversiDataset(Dataset):
             opponents = []
             scores = []
             for i in range(n):
-                if i % 131072 == 0:
-                    print(f"Loading... {i}")
+                if i % 65536 == 0:
+                    print(f"Loading from {dataset_file} ... {i}/{n}\r", end="")
                 player_s, opponent_s, score, _ = f.readline().split()
                 player = int(player_s, base=16)
                 opponent = int(opponent_s, base=16)
@@ -49,6 +49,7 @@ class ReversiDataset(Dataset):
                 players.append(player)
                 opponents.append(opponent)
                 scores.append(score)
+            print()
         self._players = np.array(players, dtype=np.uint64)
         self._opponents = np.array(opponents, dtype=np.uint64)
         self._scores = np.array(scores, dtype=np.int32)
