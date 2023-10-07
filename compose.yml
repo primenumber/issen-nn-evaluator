@@ -9,6 +9,7 @@ services:
               capabilities: [gpu]
     volumes:
       - .:/workspace
+    shm_size: '4gb'
   devel-intel:
     environment:
       - USE_IPEX=true
