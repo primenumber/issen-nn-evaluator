@@ -16,6 +16,5 @@ services:
       - /dev/dri:/dev/dri
     image: intel/intel-extension-for-pytorch:latest
     shm_size: '4gb'
-    privileged: true
     volumes:
       - .:/workspace
