@@ -117,6 +117,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 if use_ipex:
     model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
+elif device == "cuda":
+    model = torch.compile(model)
 
 scheduler = torch.optim.lr_scheduler.LinearLR(
     optimizer, start_factor=0.03, end_factor=1.0, total_iters=5
