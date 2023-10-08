@@ -138,10 +138,10 @@ train_data = ReversiDataset(train_data_file, stones_filter, 16777216)
 test_data = ReversiDataset(test_data_file, stones_filter, 16777216)
 
 train_dataloader = DataLoader(
-    train_data, batch_size=batch_size, shuffle=True, num_workers=8
+    train_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count()
 )
 test_dataloader = DataLoader(
-    test_data, batch_size=batch_size, shuffle=True, num_workers=8
+    test_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count()
 )
 
 for t in range(epochs):
