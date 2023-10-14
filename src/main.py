@@ -8,7 +8,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 
-from model import PatternBasedLarge, PatternBasedSmall
+from model import PatternBasedV2
 
 use_ipex = "USE_IPEX" in os.environ
 if use_ipex:
@@ -110,8 +110,8 @@ def test_loop(dataloader, model, loss_fn):
     print(f"Test Avg loss: {test_loss:>8f}")
 
 
-# model = PatternBasedLarge(32).to(device)
-model = PatternBasedSmall(8).to(device)
+# model = PatternBasedV2(64, 32).to(device)
+model = PatternBasedV2(32, 16).to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
@@ -121,7 +121,7 @@ elif device == "cuda":
     model = torch.compile(model)
 
 scheduler = torch.optim.lr_scheduler.LinearLR(
-    optimizer, start_factor=0.03, end_factor=1.0, total_iters=5
+    optimizer, start_factor=0.08, end_factor=1.0, total_iters=5
 )
 loss_fn = nn.MSELoss()
 
@@ -138,6 +138,8 @@ test_data_file = "workdir/dataset_221009_test.txt"
 stones_filter = {i for i in range(14, 60)}
 train_data = ReversiDataset(train_data_file, stones_filter, 16777216)
 test_data = ReversiDataset(test_data_file, stones_filter, 16777216)
+#train_data = ReversiDataset(train_data_file, stones_filter, 16777216)
+#test_data = ReversiDataset(test_data_file, stones_filter, 16777216)
 
 train_dataloader = DataLoader(
     train_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count()
