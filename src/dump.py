@@ -7,7 +7,6 @@ from model import PatternBasedV2
 use_ipex = "USE_IPEX" in os.environ
 if use_ipex:
     import intel_extension_for_pytorch as ipex
-    print(ipex.xpu.get_device_name(0))
 
 model = torch.load("workdir/reversei_pattern_based.pth")
 model.eval()
