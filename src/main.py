@@ -113,7 +113,7 @@ def test_loop(dataloader, model, loss_fn):
 # model = PatternBasedV2(64, 32).to(device)
 model = PatternBasedV2(32, 16).to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
 if use_ipex:
     model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
