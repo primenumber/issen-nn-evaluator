@@ -15,6 +15,7 @@ total_params = 0
 for param_tensor in model.state_dict():
     tensor = model.state_dict()[param_tensor]
     total_params += torch.numel(tensor)
-    print(param_tensor, "\t", tensor.size(), tensor.max())
+    print(param_tensor, tensor.size(), tensor.min(), tensor.max())
+    print(" ".join(map(str, torch.flatten(tensor).tolist())))
 
 print("total params:", total_params)
