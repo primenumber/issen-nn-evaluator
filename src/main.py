@@ -24,7 +24,8 @@ else:
 
 print(f"Using {device} device")
 
-dtype=torch.float32
+dtype = torch.bfloat16
+
 
 class ReversiDataset(Dataset):
     def __init__(
