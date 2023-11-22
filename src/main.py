@@ -32,8 +32,6 @@ class ReversiDataset(Dataset):
     ):
         with open(dataset_file) as f:
             n = int(f.readline())
-            if limit is not None:
-                n = min(n, limit)
             players = []
             opponents = []
             scores = []
@@ -49,6 +47,8 @@ class ReversiDataset(Dataset):
                 players.append(player)
                 opponents.append(opponent)
                 scores.append(score)
+                if len(players) == limit:
+                    break
             print()
         self._players = np.array(players, dtype=np.uint64)
         self._opponents = np.array(opponents, dtype=np.uint64)
