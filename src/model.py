@@ -1,21 +1,36 @@
 import torch
 from torch import nn
+import typing
 
 
 def generate_patterns():
-    base_patterns = [
-        [0, 1, 2, 3, 4, 5, 6, 7, 9, 14],
-        [8, 9, 10, 11, 12, 13, 14, 15],
-        [16, 17, 18, 19, 20, 21, 22, 23],
-        [24, 25, 26, 27, 28, 29, 30, 31],
-        [0, 1, 2, 3, 4, 8, 9, 10, 11, 12],
-        [0, 1, 2, 3, 8, 9, 10, 16, 17, 24],
-        [3, 4, 10, 11, 17, 18, 24, 25, 32],
-        [5, 12, 19, 26, 33, 40],
-        [6, 13, 20, 27, 34, 41, 48],
-        [7, 20, 21, 28, 35, 42, 49, 56],
+    base_pattern_bits = [
+        0x0000_0000_0000_42FF,
+        0x0000_0000_0000_FF00,
+        0x0000_0000_00FF_0000,
+        0x0000_0000_FF00_0000,
+        0x0000_0000_0000_1F1F,
+        0x0000_0000_0103_070F,
+        0x0000_0001_0306_0C18,
+        0x0000_0102_0408_1020,
+        0x0001_0204_0810_2040,
+        0x0102_0408_1020_4080,
+        0x0000_0000_0000_3CBD,
+        0x0000_0000_0C0E_0703,
+        0x0000_0000_0007_0707,
+        0x0000_0000_0000_24FF,
+        0x0000_0000_0A06_0F03,
+        0x0000_0002_0202_1F03,
     ]
-    return base_patterns
+
+    def to_idx(bits: int) -> list[int]:
+        result = []
+        for i in range(64):
+            if (bits >> i) & 1 == 1:
+                result.append(i)
+        return result
+
+    return [to_idx(bits) for bits in base_pattern_bits]
 
 
 class EmbedPattern(nn.Module):
@@ -24,7 +39,9 @@ class EmbedPattern(nn.Module):
         self.pattern_size = pattern_size
         self.input_channels = input_channels
         self.output_channels = output_channels
-        self.linear_layer = nn.Linear(pattern_size * input_channels, output_channels, bias=False)
+        self.linear_layer = nn.Linear(
+            pattern_size * input_channels, output_channels, bias=False
+        )
 
     def forward(self, x):
         x = torch.reshape(x, [-1, 8, self.pattern_size * self.input_channels])
@@ -38,66 +55,92 @@ class PatternBasedV2(nn.Module):
         self.input_channels = 2
         self.front_channels = front_channels
         self.num_symmetry = 8
-        self.num_patterns = 10
+        self.num_patterns = len(self.patterns)
         self.middle_channels = middle_channels
         self.grouped_channels = self.front_channels * self.num_patterns
-        self.frontend_block_0 = EmbedPattern(
-            10, self.input_channels, self.front_channels, 
-        )
-        self.frontend_block_1 = EmbedPattern(
-            8, self.input_channels, self.front_channels
-        )
-        self.frontend_block_2 = EmbedPattern(
-            8, self.input_channels, self.front_channels,
-        )
-        self.frontend_block_3 = EmbedPattern(
-            8, self.input_channels, self.front_channels,
-        )
-        self.frontend_block_4 = EmbedPattern(
-            10, self.input_channels, self.front_channels,
-        )
-        self.frontend_block_5 = EmbedPattern(
-            10, self.input_channels, self.front_channels,
-        )
-        self.frontend_block_6 = EmbedPattern(
-            9, self.input_channels, self.front_channels,
-        )
-        self.frontend_block_7 = EmbedPattern(
-            6, self.input_channels, self.front_channels,
-        )
-        self.frontend_block_8 = EmbedPattern(
-            7, self.input_channels, self.front_channels,
-        )
-        self.frontend_block_9 = EmbedPattern(
-            8, self.input_channels, self.front_channels,
+        self.frontend_blocks = nn.ModuleList(
+            [
+                EmbedPattern(len(pattern), self.input_channels, self.front_channels)
+                for pattern in self.patterns
+            ]
         )
         self.middle_block_1 = nn.Sequential(
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.grouped_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.grouped_channels,
+                1,
+                groups=self.num_patterns,
+            ),
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.grouped_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.grouped_channels,
+                1,
+                groups=self.num_patterns,
+            ),
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.grouped_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.grouped_channels,
+                1,
+                groups=self.num_patterns,
+            ),
         )
         self.middle_block_2 = nn.Sequential(
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.grouped_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.grouped_channels,
+                1,
+                groups=self.num_patterns,
+            ),
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.grouped_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.grouped_channels,
+                1,
+                groups=self.num_patterns,
+            ),
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.grouped_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.grouped_channels,
+                1,
+                groups=self.num_patterns,
+            ),
         )
         self.middle_block_3 = nn.Sequential(
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.grouped_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.grouped_channels,
+                1,
+                groups=self.num_patterns,
+            ),
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.grouped_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.grouped_channels,
+                1,
+                groups=self.num_patterns,
+            ),
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.grouped_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.grouped_channels,
+                1,
+                groups=self.num_patterns,
+            ),
         )
         self.middle_block_last = nn.Sequential(
             nn.ReLU(),
-            nn.Conv1d(self.grouped_channels, self.num_patterns * self.middle_channels, 1, groups = self.num_patterns),
+            nn.Conv1d(
+                self.grouped_channels,
+                self.num_patterns * self.middle_channels,
+                1,
+                groups=self.num_patterns,
+            ),
         )
         self.backend_block = nn.Sequential(
             nn.BatchNorm1d(middle_channels),
@@ -121,26 +164,28 @@ class PatternBasedV2(nn.Module):
         x47 = torch.flip(x03, [4])
         x07 = torch.cat((x03, x47), dim=1)
         vx = torch.reshape(x07, [-1, 8, 2, 64])
-        m0 = self.frontend_block_0(vx[:, :, :, self.patterns[0]])
-        m1 = self.frontend_block_1(vx[:, :, :, self.patterns[1]])
-        m2 = self.frontend_block_2(vx[:, :, :, self.patterns[2]])
-        m3 = self.frontend_block_3(vx[:, :, :, self.patterns[3]])
-        m4 = self.frontend_block_4(vx[:, :, :, self.patterns[4]])
-        m5 = self.frontend_block_5(vx[:, :, :, self.patterns[5]])
-        m6 = self.frontend_block_6(vx[:, :, :, self.patterns[6]])
-        m7 = self.frontend_block_7(vx[:, :, :, self.patterns[7]])
-        m8 = self.frontend_block_8(vx[:, :, :, self.patterns[8]])
-        m9 = self.frontend_block_9(vx[:, :, :, self.patterns[9]])
-        m = torch.stack((m0, m1, m2, m3, m4, m5, m6, m7, m8, m9), dim=1)
-        m = torch.reshape(m, [-1, self.num_patterns , self.num_symmetry, self.front_channels])
+        vm = []
+        for i, pattern in enumerate(self.patterns):
+            vm.append(self.frontend_blocks[i](vx[:, :, :, pattern]))
+        m = torch.stack(vm, dim=1)
+        m = torch.reshape(
+            m, [-1, self.num_patterns, self.num_symmetry, self.front_channels]
+        )
         m = torch.transpose(m, 2, 3)
-        m = torch.reshape(m, [-1, self.num_patterns * self.front_channels, self.num_symmetry])
+        m = torch.reshape(
+            m, [-1, self.num_patterns * self.front_channels, self.num_symmetry]
+        )
         b0 = m + self.middle_block_1(m)
         b1 = b0 + self.middle_block_2(b0)
         b2 = b1 + self.middle_block_3(b1)
         b3 = self.middle_block_last(b2)
-        b4 = torch.reshape(b3, [-1, self.num_patterns, self.middle_channels, self.num_symmetry])
-        b4 = torch.reshape(torch.transpose(b4, 1, 2), [-1, self.middle_channels, self.num_patterns * self.num_symmetry])
+        b4 = torch.reshape(
+            b3, [-1, self.num_patterns, self.middle_channels, self.num_symmetry]
+        )
+        b4 = torch.reshape(
+            torch.transpose(b4, 1, 2),
+            [-1, self.middle_channels, self.num_patterns * self.num_symmetry],
+        )
         b5 = torch.sum(b4, 2)
         y = self.backend_block(b5)
         return y
