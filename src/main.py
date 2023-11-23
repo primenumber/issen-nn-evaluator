@@ -13,6 +13,7 @@ from model import PatternBasedV2
 use_ipex = "USE_IPEX" in os.environ
 if use_ipex:
     import intel_extension_for_pytorch as ipex
+
     print(ipex.xpu.get_device_name(0))
 
 if use_ipex:
@@ -134,13 +135,9 @@ train_data_file = "workdir/dataset_221009_train.txt"
 test_data_file = "workdir/dataset_221009_test.txt"
 
 # stones_filter = {i for i in range(50, 55)}
-# train_data = ReversiDataset(train_data_file, stones_filter)
-# test_data = ReversiDataset(test_data_file, stones_filter)
 stones_filter = {i for i in range(14, 60)}
 train_data = ReversiDataset(train_data_file, stones_filter, 16777216)
 test_data = ReversiDataset(test_data_file, stones_filter, 16777216)
-#train_data = ReversiDataset(train_data_file, stones_filter, 16777216)
-#test_data = ReversiDataset(test_data_file, stones_filter, 16777216)
 
 train_dataloader = DataLoader(
     train_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count()
