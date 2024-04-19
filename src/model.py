@@ -39,24 +39,33 @@ class EmbedPattern(nn.Module):
         self.pattern_size = pattern_size
         self.input_channels = input_channels
         self.output_channels = output_channels
+        self.embedding = nn.Embedding(3 ** pattern_size, output_channels)
         self.linear_layer = nn.Linear(
             pattern_size * input_channels, output_channels, bias=False
         )
 
     def forward(self, x):
-        x = torch.reshape(x, [-1, 8, self.pattern_size * self.input_channels])
-        return self.linear_layer(x)
+        y = x[:,:,0,:]
+        z = x[:,:,1,:]
+        w = y + 2 * z
+        pow3 = torch.tensor([3 ** i for i in range(self.pattern_size)], dtype=torch.int32).to(x.device)
+        m = torch.mul(w, torch.reshape(pow3, [1, 1, self.pattern_size]))
+        s = torch.sum(m, 2)
+        return self.embedding(s)
+        #return self.linear_layer(x)
 
 
 class PatternBasedV2(nn.Module):
-    def __init__(self, front_channels, middle_channels):
+    def __init__(self, front_channels, middle_channels, back_channels):
         super(PatternBasedV2, self).__init__()
         self.patterns = generate_patterns()
         self.input_channels = 2
         self.front_channels = front_channels
         self.num_symmetry = 8
+        self.middle_channels_scale = 1
         self.num_patterns = len(self.patterns)
         self.middle_channels = middle_channels
+        self.back_channels = back_channels
         self.grouped_channels = self.front_channels * self.num_patterns
         self.frontend_blocks = nn.ModuleList(
             [
@@ -65,69 +74,72 @@ class PatternBasedV2(nn.Module):
             ]
         )
         self.middle_block_1 = nn.Sequential(
+            nn.GroupNorm(4, self.grouped_channels),
             nn.ReLU(),
             nn.Conv1d(
                 self.grouped_channels,
-                self.grouped_channels,
+                self.grouped_channels * self.middle_channels_scale,
                 1,
                 groups=self.num_patterns,
             ),
             nn.ReLU(),
             nn.Conv1d(
-                self.grouped_channels,
-                self.grouped_channels,
+                self.grouped_channels * self.middle_channels_scale,
+                self.grouped_channels * self.middle_channels_scale,
                 1,
                 groups=self.num_patterns,
             ),
             nn.ReLU(),
             nn.Conv1d(
-                self.grouped_channels,
+                self.grouped_channels * self.middle_channels_scale,
                 self.grouped_channels,
                 1,
                 groups=self.num_patterns,
             ),
         )
         self.middle_block_2 = nn.Sequential(
+            nn.GroupNorm(4, self.grouped_channels),
             nn.ReLU(),
             nn.Conv1d(
                 self.grouped_channels,
-                self.grouped_channels,
+                self.grouped_channels * self.middle_channels_scale,
                 1,
                 groups=self.num_patterns,
             ),
             nn.ReLU(),
             nn.Conv1d(
-                self.grouped_channels,
-                self.grouped_channels,
+                self.grouped_channels * self.middle_channels_scale,
+                self.grouped_channels * self.middle_channels_scale,
                 1,
                 groups=self.num_patterns,
             ),
             nn.ReLU(),
             nn.Conv1d(
-                self.grouped_channels,
+                self.grouped_channels * self.middle_channels_scale,
                 self.grouped_channels,
                 1,
                 groups=self.num_patterns,
             ),
         )
         self.middle_block_3 = nn.Sequential(
+            nn.GroupNorm(4, self.grouped_channels),
             nn.ReLU(),
             nn.Conv1d(
                 self.grouped_channels,
-                self.grouped_channels,
+                self.grouped_channels * self.middle_channels_scale,
                 1,
                 groups=self.num_patterns,
             ),
             nn.ReLU(),
             nn.Conv1d(
-                self.grouped_channels,
-                self.grouped_channels,
+                self.grouped_channels * self.middle_channels_scale,
+                self.grouped_channels * self.middle_channels_scale,
                 1,
                 groups=self.num_patterns,
             ),
             nn.ReLU(),
             nn.Conv1d(
-                self.grouped_channels,
+                self.grouped_channels * self.middle_channels_scale,
                 self.grouped_channels,
                 1,
                 groups=self.num_patterns,
@@ -143,15 +155,15 @@ class PatternBasedV2(nn.Module):
             ),
         )
         self.backend_block = nn.Sequential(
-            nn.BatchNorm1d(middle_channels),
+            nn.GroupNorm(4, middle_channels),
             nn.ReLU(),
-            nn.Linear(middle_channels, middle_channels, bias=False),
-            nn.BatchNorm1d(middle_channels),
+            nn.Linear(middle_channels, back_channels, bias=False),
+            nn.GroupNorm(4, back_channels),
             nn.ReLU(),
-            nn.Linear(middle_channels, middle_channels, bias=False),
-            nn.BatchNorm1d(middle_channels),
+            nn.Linear(back_channels, back_channels, bias=False),
+            nn.GroupNorm(4, back_channels),
             nn.ReLU(),
-            nn.Linear(middle_channels, 1),
+            nn.Linear(back_channels, 1),
         )
 
     def forward(self, x):

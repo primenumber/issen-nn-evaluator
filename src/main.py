@@ -1,14 +1,15 @@
 import os
 import time
 import random
-from typing import Optional
 
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 
 from model import PatternBasedV2
+from dataset import ReversiDataset
 
 use_ipex = "USE_IPEX" in os.environ
 if use_ipex:
@@ -27,61 +28,18 @@ print(f"Using {device} device")
 
 dtype = torch.bfloat16
 
+writer = SummaryWriter()
 
-class ReversiDataset(Dataset):
-    def __init__(
-        self, dataset_file: str, stone_filter: set[int], limit: Optional[int] = None
-    ):
-        with open(dataset_file) as f:
-            n = int(f.readline())
-            players = []
-            opponents = []
-            scores = []
-            for i in range(n):
-                if i % 65536 == 0:
-                    print(f"Loading from {dataset_file} ... {i}/{n}\r", end="")
-                player_s, opponent_s, score, _ = f.readline().split()
-                player = int(player_s, base=16)
-                opponent = int(opponent_s, base=16)
-                stone_count = bin(player | opponent).count("1")
-                if stone_count not in stone_filter:
-                    continue
-                players.append(player)
-                opponents.append(opponent)
-                scores.append(score)
-                if len(players) == limit:
-                    break
-            print()
-        self._players = np.array(players, dtype=np.uint64)
-        self._opponents = np.array(opponents, dtype=np.uint64)
-        self._scores = np.array(scores, dtype=np.int32)
-
-    def __len__(self):
-        return len(self._scores)
-
-    def __getitem__(self, idx: int):
-        player_bits = list(map(int, format(self._players[idx], "064b")))
-        opponent_bits = list(map(int, format(self._opponents[idx], "064b")))
-        X = torch.zeros([2, 64], dtype=dtype)
-        y = torch.zeros([1], dtype=dtype)
-        X[0] = torch.tensor(player_bits, dtype=torch.int32)
-        X[1] = torch.tensor(opponent_bits, dtype=torch.int32)
-        X = torch.reshape(X, [2, 8, 8])
-        if random.random() > 0.5:
-            X = torch.transpose(X, 1, 2)
-        if random.random() > 0.5:
-            X = torch.flip(X, [1])
-        if random.random() > 0.5:
-            X = torch.flip(X, [2])
-        X = torch.reshape(X, [2, 64])
-        y[0] = int(self._scores[idx])
-        return X, y
-
-
-def train_loop(dataloader, model, loss_fn, optimizer):
+def train_loop(dataloader, model, loss_fn, optimizer, epoch):
+    num_batches = len(dataloader)
     size = len(dataloader.dataset)
     start = time.perf_counter()
     for batch, (X, y) in enumerate(dataloader):
+        if batch == 100:
+            end = time.perf_counter()
+            current = batch * len(X)
+            print(f"Time per 100 batch: {end - start:>5f}s, [{current:>5d}/{size:>5d}]")
+
         X = X.to(device)
         y = y.to(device)
         pred = model(X)
@@ -90,16 +48,16 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         loss.backward()
         optimizer.step()
 
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * len(X)
-            print(f"loss: {loss:>7f} [{current:>5d}/{size:>5d}]")
+        writer.add_scalar('Loss/train', loss.item(), epoch * num_batches + batch)
+        #    loss, current = loss.item(), batch * len(X)
+        #    print(f"loss: {loss:>7f} [{current:>5d}/{size:>5d}]")
     end = time.perf_counter()
     print(f"Time per Epoch: {end - start:>5f}s")
 
 
-def test_loop(dataloader, model, loss_fn):
-    size = len(dataloader.dataset)
+def test_loop(dataloader, model, loss_fn, epoch):
     num_batches = len(dataloader)
+    size = len(dataloader.dataset)
     test_loss = 0
     with torch.no_grad():
         for X, y in dataloader:
@@ -110,10 +68,14 @@ def test_loop(dataloader, model, loss_fn):
 
     test_loss /= num_batches
     print(f"Test Avg loss: {test_loss:>8f}")
+    writer.add_scalar('Loss/test', test_loss, epoch + 1)
 
 
-# model = PatternBasedV2(64, 32).to(device)
-model = PatternBasedV2(32, 16).to(device)
+front = 256
+middle = 256
+back = 32
+# model = PatternBasedV2(32, 32, 32).to(device)
+model = PatternBasedV2(front, middle, back).to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
@@ -122,22 +84,29 @@ if use_ipex:
 elif device == "cuda":
     model = torch.compile(model)
 
-scheduler = torch.optim.lr_scheduler.LinearLR(
-    optimizer, start_factor=0.08, end_factor=1.0, total_iters=5
+scheduler1 = torch.optim.lr_scheduler.LinearLR(
+    optimizer, start_factor=0.2, end_factor=1.0, total_iters=5
+)
+scheduler2 = torch.optim.lr_scheduler.ExponentialLR(
+    optimizer, gamma = 0.9
 )
 loss_fn = nn.MSELoss()
 
-# batch_size = 128  # for PatternBasedLarge
-batch_size = 4096  # for PatternBasedSmall
-epochs = 20
+batch_size = 4096  # for PatternBasedLarge
+# batch_size = 4096  # for PatternBasedSmall
+epochs = 60
 
 train_data_file = "workdir/dataset_221009_train.txt"
 test_data_file = "workdir/dataset_221009_test.txt"
 
 # stones_filter = {i for i in range(50, 55)}
 stones_filter = {i for i in range(14, 60)}
-train_data = ReversiDataset(train_data_file, stones_filter, 16777216)
-test_data = ReversiDataset(test_data_file, stones_filter, 16777216)
+# train_data = ReversiDataset(train_data_file, stones_filter, 100000)
+# test_data = ReversiDataset(test_data_file, stones_filter, 100000)
+# train_data = ReversiDataset(train_data_file, stones_filter, 1048576)
+# test_data = ReversiDataset(test_data_file, stones_filter, 1048576)
+train_data = ReversiDataset(train_data_file, dtype, stones_filter, -1)
+test_data = ReversiDataset(test_data_file, dtype, stones_filter, 33554432)
 
 train_dataloader = DataLoader(
     train_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count()
@@ -147,10 +116,13 @@ test_dataloader = DataLoader(
 )
 
 for t in range(epochs):
-    print(f"[[[ Epoch {t+1} ]]]\n--------------------------------")
-    train_loop(train_dataloader, model, loss_fn, optimizer)
-    test_loop(test_dataloader, model, loss_fn)
-    scheduler.step()
+    print(f"Epoch {t+1}")
+    train_loop(train_dataloader, model, loss_fn, optimizer, t)
+    test_loop(test_dataloader, model, loss_fn, t)
+    scheduler1.step()
+    scheduler2.step()
+    print("Save tmp model...")
+    torch.save(model, f"workdir/nnue_{front}_{middle}_{back}_e{t}.pth")
 print("Save model...")
-torch.save(model, "workdir/reversei_pattern_based.pth")
+torch.save(model, f"workdir/nnue_{front}_{middle}_{back}.pth")
 print("Done!")
