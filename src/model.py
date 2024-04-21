@@ -40,9 +40,6 @@ class EmbedPattern(nn.Module):
         self.input_channels = input_channels
         self.output_channels = output_channels
         self.embedding = nn.Embedding(3 ** pattern_size, output_channels)
-        self.linear_layer = nn.Linear(
-            pattern_size * input_channels, output_channels, bias=False
-        )
 
     def forward(self, x):
         y = x[:,:,0,:]
@@ -52,7 +49,6 @@ class EmbedPattern(nn.Module):
         m = torch.mul(w, torch.reshape(pow3, [1, 1, self.pattern_size]))
         s = torch.sum(m, 2)
         return self.embedding(s)
-        #return self.linear_layer(x)
 
 
 class PatternBasedV2(nn.Module):
