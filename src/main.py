@@ -71,29 +71,43 @@ def test_loop(dataloader, model, loss_fn, epoch):
     writer.add_scalar('Loss/test', test_loss, epoch + 1)
 
 
-front = 256
-middle = 256
+front = 64
+middle = 64
 back = 32
-# model = PatternBasedV2(32, 32, 32).to(device)
-model = PatternBasedV2(front, middle, back).to(device)
+# front = 256
+# middle = 256
+# back = 32
 
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
+model_path = f"workdir/nnue_{front}_{middle}_{back}.pth"
+ckpt_path = f"workdir/nnue_{front}_{middle}_{back}_ckpt.pth"
 
-if use_ipex:
-    model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
-elif device == "cuda":
-    model = torch.compile(model)
+if os.path.isfile(ckpt_path):
+    print("Load from ckpt")
+    state = torch.load(ckpt_path, device)
+    model = state['model']
+    optimizer = state['optimizer']
+    scheduler1 = state['scheduler1']
+    scheduler2 = state['scheduler2']
+else:
+    model = PatternBasedV2(front, middle, back).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
-scheduler1 = torch.optim.lr_scheduler.LinearLR(
-    optimizer, start_factor=0.2, end_factor=1.0, total_iters=5
-)
-scheduler2 = torch.optim.lr_scheduler.ExponentialLR(
-    optimizer, gamma = 0.9
-)
+    if use_ipex:
+        model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
+    elif device == "cuda":
+        model = torch.compile(model)
+
+    scheduler1 = torch.optim.lr_scheduler.LinearLR(
+        optimizer, start_factor=0.2, end_factor=1.0, total_iters=5
+    )
+    scheduler2 = torch.optim.lr_scheduler.ExponentialLR(
+        optimizer, gamma = 0.9
+    )
+
+
 loss_fn = nn.MSELoss()
 
-batch_size = 4096  # for PatternBasedLarge
-# batch_size = 4096  # for PatternBasedSmall
+batch_size = 4096
 epochs = 60
 
 train_data_file = "workdir/dataset_221009_train.txt"
@@ -101,10 +115,6 @@ test_data_file = "workdir/dataset_221009_test.txt"
 
 # stones_filter = {i for i in range(50, 55)}
 stones_filter = {i for i in range(14, 60)}
-# train_data = ReversiDataset(train_data_file, stones_filter, 100000)
-# test_data = ReversiDataset(test_data_file, stones_filter, 100000)
-# train_data = ReversiDataset(train_data_file, stones_filter, 1048576)
-# test_data = ReversiDataset(test_data_file, stones_filter, 1048576)
 train_data = ReversiDataset(train_data_file, dtype, stones_filter, -1)
 test_data = ReversiDataset(test_data_file, dtype, stones_filter, 33554432)
 
@@ -122,7 +132,13 @@ for t in range(epochs):
     scheduler1.step()
     scheduler2.step()
     print("Save tmp model...")
-    torch.save(model, f"workdir/nnue_{front}_{middle}_{back}_e{t}.pth")
+    state = {
+        'model': model,
+        'optimizer': optimizer,
+        'scheduler1': scheduler1,
+        'scheduler2': scheduler2,
+    }
+    torch.save(state, ckpt_path)
 print("Save model...")
-torch.save(model, f"workdir/nnue_{front}_{middle}_{back}.pth")
+torch.save(model, model_path)
 print("Done!")
