@@ -9,13 +9,13 @@ services:
               capabilities: [gpu]
     volumes:
       - .:/workspace
-    shm_size: '8gb'
+    shm_size: '16gb'
   devel-intel:
     environment:
       - USE_IPEX=true
     devices:
       - /dev/dri:/dev/dri
     image: intel/intel-extension-for-pytorch:latest
-    shm_size: '8gb'
+    shm_size: '16gb'
     volumes:
       - .:/workspace
