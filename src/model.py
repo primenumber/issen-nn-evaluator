@@ -3,7 +3,7 @@ from torch import nn
 import typing
 
 
-def generate_patterns():
+def generate_patterns() -> list[list[int]]:
     base_pattern_bits = [
         0x0000_0000_0000_42FF,
         0x0000_0000_0000_FF00,
@@ -33,127 +33,41 @@ def generate_patterns():
     return [to_idx(bits) for bits in base_pattern_bits]
 
 
-class EmbedPattern(nn.Module):
-    def __init__(self, pattern_size, input_channels, output_channels):
-        super(EmbedPattern, self).__init__()
-        self.pattern_size = pattern_size
-        self.input_channels = input_channels
-        self.output_channels = output_channels
-        self.embedding = nn.Embedding(3 ** pattern_size, output_channels)
+def generate_pattern_indexer(patterns: list[list[int]]) -> tuple[list[list[int]], list[int], int]:
+    def to_indexer(pattern: list[int]) -> list[list[int]]:
+        result = [0 for _ in range(64)]
+        for i, pos in enumerate(pattern):
+            result[pos] = 3 ** i
+        return result
 
-    def forward(self, x):
-        y = x[:,:,0,:]
-        z = x[:,:,1,:]
-        w = y + 2 * z
-        pow3 = torch.tensor([3 ** i for i in range(self.pattern_size)], dtype=torch.int32).to(x.device)
-        m = torch.mul(w, torch.reshape(pow3, [1, 1, self.pattern_size]))
-        s = torch.sum(m, 2)
-        return self.embedding(s)
+    offset = 0
+    mat = []
+    bias = []
+    for pattern in patterns:
+        mat.append(to_indexer(pattern))
+        bias.append(offset)
+        offset += 3 ** len(pattern)
+
+    return (mat, bias, offset)
 
 
 class PatternBasedV2(nn.Module):
-    def __init__(self, front_channels, middle_channels, back_channels):
+    def __init__(self, front_channels, back_channels):
         super(PatternBasedV2, self).__init__()
         self.patterns = generate_patterns()
+        idx_mat, idx_bias, total_idx = generate_pattern_indexer(self.patterns)
+        self.indexer_mat = torch.transpose(torch.tensor(idx_mat, dtype=torch.int32), 0, 1).to(torch.float32)
+        self.indexer_bias = torch.reshape(torch.tensor(idx_bias, dtype=torch.int32), [1, len(self.patterns)])
         self.input_channels = 2
         self.front_channels = front_channels
         self.num_symmetry = 8
-        self.middle_channels_scale = 1
         self.num_patterns = len(self.patterns)
-        self.middle_channels = middle_channels
         self.back_channels = back_channels
-        self.grouped_channels = self.front_channels * self.num_patterns
-        self.frontend_blocks = nn.ModuleList(
-            [
-                EmbedPattern(len(pattern), self.input_channels, self.front_channels)
-                for pattern in self.patterns
-            ]
-        )
-        self.middle_block_1 = nn.Sequential(
-            nn.GroupNorm(4, self.grouped_channels),
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels,
-                self.grouped_channels * self.middle_channels_scale,
-                1,
-                groups=self.num_patterns,
-            ),
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels * self.middle_channels_scale,
-                self.grouped_channels * self.middle_channels_scale,
-                1,
-                groups=self.num_patterns,
-            ),
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels * self.middle_channels_scale,
-                self.grouped_channels,
-                1,
-                groups=self.num_patterns,
-            ),
-        )
-        self.middle_block_2 = nn.Sequential(
-            nn.GroupNorm(4, self.grouped_channels),
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels,
-                self.grouped_channels * self.middle_channels_scale,
-                1,
-                groups=self.num_patterns,
-            ),
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels * self.middle_channels_scale,
-                self.grouped_channels * self.middle_channels_scale,
-                1,
-                groups=self.num_patterns,
-            ),
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels * self.middle_channels_scale,
-                self.grouped_channels,
-                1,
-                groups=self.num_patterns,
-            ),
-        )
-        self.middle_block_3 = nn.Sequential(
-            nn.GroupNorm(4, self.grouped_channels),
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels,
-                self.grouped_channels * self.middle_channels_scale,
-                1,
-                groups=self.num_patterns,
-            ),
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels * self.middle_channels_scale,
-                self.grouped_channels * self.middle_channels_scale,
-                1,
-                groups=self.num_patterns,
-            ),
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels * self.middle_channels_scale,
-                self.grouped_channels,
-                1,
-                groups=self.num_patterns,
-            ),
-        )
-        self.middle_block_last = nn.Sequential(
-            nn.ReLU(),
-            nn.Conv1d(
-                self.grouped_channels,
-                self.num_patterns * self.middle_channels,
-                1,
-                groups=self.num_patterns,
-            ),
-        )
+        self.embedding = nn.Embedding(total_idx, front_channels, max_norm = 1.0)
         self.backend_block = nn.Sequential(
-            nn.GroupNorm(4, middle_channels),
+            nn.GroupNorm(4, front_channels),
             nn.ReLU(),
-            nn.Linear(middle_channels, back_channels, bias=False),
+            nn.Linear(front_channels, back_channels, bias=False),
             nn.GroupNorm(4, back_channels),
             nn.ReLU(),
             nn.Linear(back_channels, back_channels, bias=False),
@@ -163,37 +77,24 @@ class PatternBasedV2(nn.Module):
         )
 
     def forward(self, x):
-        x = torch.reshape(x, [-1, 1, 2, 8, 8])
+        x = torch.reshape(x.to(torch.float32), [-1, 1, 2, 8, 8])
+        xp = x[:, :, 0, :, :]
+        xo = x[:, :, 1, :, :]
+        x = xp + 2 * xo
         x0 = x
-        x1 = torch.transpose(x, 3, 4)
+        x1 = torch.transpose(x, 2, 3)
         x01 = torch.cat((x0, x1), dim=1)
-        x23 = torch.flip(x01, [3])
+        x23 = torch.flip(x01, [2])
         x03 = torch.cat((x01, x23), dim=1)
-        x47 = torch.flip(x03, [4])
+        x47 = torch.flip(x03, [3])
         x07 = torch.cat((x03, x47), dim=1)
-        vx = torch.reshape(x07, [-1, 8, 2, 64])
-        vm = []
-        for i, pattern in enumerate(self.patterns):
-            vm.append(self.frontend_blocks[i](vx[:, :, :, pattern]))
-        m = torch.stack(vm, dim=1)
+        vx = torch.reshape(x07, [-1, 64])
+        s = torch.matmul(vx, self.indexer_mat.to(x.device)) + self.indexer_bias.to(x.device)
+        s = torch.reshape(s.to(torch.int32), [-1])
+        m = self.embedding(s)
         m = torch.reshape(
-            m, [-1, self.num_patterns, self.num_symmetry, self.front_channels]
+            m, [-1, self.num_patterns * self.num_symmetry, self.front_channels]
         )
-        m = torch.transpose(m, 2, 3)
-        m = torch.reshape(
-            m, [-1, self.num_patterns * self.front_channels, self.num_symmetry]
-        )
-        b0 = m + self.middle_block_1(m)
-        b1 = b0 + self.middle_block_2(b0)
-        b2 = b1 + self.middle_block_3(b1)
-        b3 = self.middle_block_last(b2)
-        b4 = torch.reshape(
-            b3, [-1, self.num_patterns, self.middle_channels, self.num_symmetry]
-        )
-        b4 = torch.reshape(
-            torch.transpose(b4, 1, 2),
-            [-1, self.middle_channels, self.num_patterns * self.num_symmetry],
-        )
-        b5 = torch.sum(b4, 2)
-        y = self.backend_block(b5)
+        m = torch.sum(m, 1)
+        y = self.backend_block(m)
         return y

@@ -72,14 +72,12 @@ def test_loop(dataloader, model, loss_fn, epoch):
 
 
 front = 256
-middle = 256
 back = 32
 # front = 256
-# middle = 256
 # back = 32
 
-model_path = f"workdir/nnue_{front}_{middle}_{back}.pth"
-ckpt_path = f"workdir/nnue_{front}_{middle}_{back}_ckpt.pth"
+model_path = f"workdir/nnue_{front}_{back}.pth"
+ckpt_path = f"workdir/nnue_{front}_{back}_ckpt.pth"
 
 if os.path.isfile(ckpt_path):
     print("Load from ckpt")
@@ -90,10 +88,10 @@ if os.path.isfile(ckpt_path):
     #scheduler2 = state['scheduler2']
     start_epoch = state['epoch'] + 1
 else:
-    model = PatternBasedV2(front, middle, back).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
+    model = PatternBasedV2(front, back).to(device)
     start_epoch = 0
 
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
 if use_ipex:
     model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
 elif device == "cuda":
@@ -109,7 +107,7 @@ scheduler2 = torch.optim.lr_scheduler.ExponentialLR(
 
 loss_fn = nn.MSELoss()
 
-batch_size = 4096
+batch_size = 65536
 epochs = 20
 
 train_data_file = "workdir/dataset_221009_train.txt"
@@ -117,8 +115,10 @@ test_data_file = "workdir/dataset_221009_test.txt"
 
 # stones_filter = {i for i in range(50, 55)}
 stones_filter = {i for i in range(14, 60)}
-train_data = ReversiDataset(train_data_file, dtype, stones_filter, -1)
-test_data = ReversiDataset(test_data_file, dtype, stones_filter, 33554432)
+#train_data = ReversiDataset(train_data_file, dtype, stones_filter, -1)
+#test_data = ReversiDataset(test_data_file, dtype, stones_filter, 33554432)
+train_data = ReversiDataset(train_data_file, dtype, stones_filter, 1048576)
+test_data = ReversiDataset(test_data_file, dtype, stones_filter, 1048576)
 
 train_dataloader = DataLoader(
     train_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count()
