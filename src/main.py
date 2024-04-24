@@ -108,7 +108,7 @@ else:
 loss_fn = nn.MSELoss()
 
 batch_size = 4096
-epochs = 60
+epochs = 20
 
 train_data_file = "workdir/dataset_221009_train.txt"
 test_data_file = "workdir/dataset_221009_test.txt"
