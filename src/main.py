@@ -71,8 +71,8 @@ def test_loop(dataloader, model, loss_fn, epoch):
     writer.add_scalar('Loss/test', test_loss, epoch + 1)
 
 
-front = 64
-middle = 64
+front = 256
+middle = 256
 back = 32
 # front = 256
 # middle = 256
@@ -85,24 +85,26 @@ if os.path.isfile(ckpt_path):
     print("Load from ckpt")
     state = torch.load(ckpt_path, device)
     model = state['model']
-    optimizer = state['optimizer']
-    scheduler1 = state['scheduler1']
-    scheduler2 = state['scheduler2']
+    #optimizer = state['optimizer']
+    #scheduler1 = state['scheduler1']
+    #scheduler2 = state['scheduler2']
+    start_epoch = state['epoch'] + 1
 else:
     model = PatternBasedV2(front, middle, back).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
+    start_epoch = 0
 
-    if use_ipex:
-        model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
-    elif device == "cuda":
-        model = torch.compile(model)
+if use_ipex:
+    model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
+elif device == "cuda":
+    model = torch.compile(model)
 
-    scheduler1 = torch.optim.lr_scheduler.LinearLR(
-        optimizer, start_factor=0.2, end_factor=1.0, total_iters=5
-    )
-    scheduler2 = torch.optim.lr_scheduler.ExponentialLR(
-        optimizer, gamma = 0.9
-    )
+scheduler1 = torch.optim.lr_scheduler.LinearLR(
+    optimizer, start_factor=0.2, end_factor=1.0, total_iters=5
+)
+scheduler2 = torch.optim.lr_scheduler.ExponentialLR(
+    optimizer, gamma = 0.9
+)
 
 
 loss_fn = nn.MSELoss()
@@ -125,7 +127,7 @@ test_dataloader = DataLoader(
     test_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count()
 )
 
-for t in range(epochs):
+for t in range(start_epoch, epochs):
     print(f"Epoch {t+1}")
     train_loop(train_dataloader, model, loss_fn, optimizer, t)
     test_loop(test_dataloader, model, loss_fn, t)
@@ -137,6 +139,7 @@ for t in range(epochs):
         'optimizer': optimizer,
         'scheduler1': scheduler1,
         'scheduler2': scheduler2,
+        'epoch': t,
     }
     torch.save(state, ckpt_path)
 print("Save model...")
