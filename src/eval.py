@@ -1,8 +1,11 @@
-import os
-import torch
 import math
+import os
+import sys
+
+import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
+
 from model import PatternBasedV2
 from dataset import ReversiDataset
 
@@ -21,7 +24,7 @@ print(f"Using {device} device")
 
 dtype = torch.bfloat16
 
-model = torch.load("workdir/nnue_128_128_32.pth")
+model = torch.load(sys.argv[1])["model"]
 model.eval()
 
 
