@@ -73,8 +73,6 @@ def test_loop(dataloader, model, loss_fn, epoch):
 
 front = 256
 back = 32
-# front = 256
-# back = 32
 
 model_path = f"workdir/nnue_{front}_{back}.pth"
 ckpt_path = f"workdir/nnue_{front}_{back}_ckpt.pth"
@@ -84,31 +82,27 @@ if os.path.isfile(ckpt_path):
     state = torch.load(ckpt_path, device)
     model = state['model']
     #optimizer = state['optimizer']
-    #scheduler1 = state['scheduler1']
-    #scheduler2 = state['scheduler2']
+    #scheduler = state['scheduler']
     start_epoch = state['epoch'] + 1
 else:
     model = PatternBasedV2(front, back).to(device)
     start_epoch = 0
 
-optimizer = torch.optim.Adam(model.parameters(), lr=3e-3, weight_decay=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
 if use_ipex:
     model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
 elif device == "cuda":
     model = torch.compile(model)
 
-scheduler1 = torch.optim.lr_scheduler.LinearLR(
-    optimizer, start_factor=0.2, end_factor=1.0, total_iters=5
-)
-scheduler2 = torch.optim.lr_scheduler.ExponentialLR(
-    optimizer, gamma = 0.9
+scheduler = torch.optim.lr_scheduler.ExponentialLR(
+    optimizer, gamma = 0.8
 )
 
 
 loss_fn = nn.MSELoss()
 
 batch_size = 16384
-epochs = 20
+epochs = 30
 
 train_data_file = "workdir/dataset_221009_train.txt"
 test_data_file = "workdir/dataset_221009_test.txt"
@@ -131,14 +125,12 @@ for t in range(start_epoch, epochs):
     print(f"Epoch {t+1}")
     train_loop(train_dataloader, model, loss_fn, optimizer, t)
     test_loop(test_dataloader, model, loss_fn, t)
-    scheduler1.step()
-    scheduler2.step()
+    scheduler.step()
     print("Save tmp model...")
     state = {
         'model': model,
         'optimizer': optimizer,
-        'scheduler1': scheduler1,
-        'scheduler2': scheduler2,
+        'scheduler': scheduler,
         'epoch': t,
     }
     torch.save(state, ckpt_path)
