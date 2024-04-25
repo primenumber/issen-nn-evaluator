@@ -15,7 +15,7 @@ services:
       - USE_IPEX=true
     devices:
       - /dev/dri:/dev/dri
-    image: intel/intel-extension-for-pytorch:latest
+    image: "intel/intel-extension-for-pytorch:2.1.20-xpu"
     shm_size: '16gb'
     volumes:
       - .:/workspace
