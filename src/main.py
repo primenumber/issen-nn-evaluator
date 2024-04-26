@@ -71,11 +71,12 @@ def test_loop(dataloader, model, loss_fn, epoch):
     writer.add_scalar('Loss/test', test_loss, epoch + 1)
 
 
-front = 256
+front = 128
+middle = 64
 back = 32
 
-model_path = f"workdir/nnue_{front}_{back}.pth"
-ckpt_path = f"workdir/nnue_{front}_{back}_ckpt.pth"
+model_path = f"workdir/nnue_{front}x{middle}x{back}.pth"
+ckpt_path = f"workdir/nnue_{front}x{middle}x{back}_ckpt.pth"
 
 if os.path.isfile(ckpt_path):
     print("Load from ckpt")
@@ -85,7 +86,7 @@ if os.path.isfile(ckpt_path):
     #scheduler = state['scheduler']
     start_epoch = state['epoch'] + 1
 else:
-    model = PatternBasedV2(front, back).to(device)
+    model = PatternBasedV2(front, middle, back).to(device)
     start_epoch = 0
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)

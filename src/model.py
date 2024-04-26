@@ -52,7 +52,7 @@ def generate_pattern_indexer(patterns: list[list[int]]) -> tuple[list[list[int]]
 
 
 class PatternBasedV2(nn.Module):
-    def __init__(self, front_channels, back_channels):
+    def __init__(self, front_channels, middle_channels, back_channels):
         super(PatternBasedV2, self).__init__()
         self.patterns = generate_patterns()
         idx_mat, idx_bias, total_idx = generate_pattern_indexer(self.patterns)
@@ -65,13 +65,9 @@ class PatternBasedV2(nn.Module):
         self.back_channels = back_channels
         self.embedding = nn.Embedding(total_idx, front_channels, max_norm = 1.0)
         self.backend_block = nn.Sequential(
-            nn.GroupNorm(4, front_channels),
+            nn.Linear(front_channels, middle_channels),
             nn.ReLU(),
-            nn.Linear(front_channels, back_channels, bias=False),
-            nn.GroupNorm(4, back_channels),
-            nn.ReLU(),
-            nn.Linear(back_channels, back_channels, bias=False),
-            nn.GroupNorm(4, back_channels),
+            nn.Linear(middle_channels, back_channels),
             nn.ReLU(),
             nn.Linear(back_channels, 1),
         )
