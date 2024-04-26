@@ -129,12 +129,12 @@ for t in range(start_epoch, epochs):
     scheduler.step()
     print("Save tmp model...")
     state = {
-        'model': model,
+        'state_dict': model.state_dict(),
         'optimizer': optimizer,
         'scheduler': scheduler,
         'epoch': t,
     }
     torch.save(state, ckpt_path)
 print("Save model...")
-torch.save(model, model_path)
+torch.save(model.state_dict(), model_path)
 print("Done!")
