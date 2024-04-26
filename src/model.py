@@ -63,7 +63,7 @@ class PatternBasedV2(nn.Module):
         self.num_symmetry = 8
         self.num_patterns = len(self.patterns)
         self.back_channels = back_channels
-        self.embedding = nn.Embedding(total_idx, front_channels, max_norm = 1.0)
+        self.embedding = nn.EmbeddingBag(total_idx, front_channels, max_norm = 1.0, mode="sum")
         self.backend_block = nn.Sequential(
             nn.Linear(front_channels, middle_channels),
             nn.ReLU(),
@@ -86,11 +86,7 @@ class PatternBasedV2(nn.Module):
         x07 = torch.cat((x03, x47), dim=1)
         vx = torch.reshape(x07, [-1, 64])
         s = torch.matmul(vx, self.indexer_mat.to(x.device)) + self.indexer_bias.to(x.device)
-        s = torch.reshape(s.to(torch.int32), [-1])
+        s = torch.reshape(s, [-1, self.num_symmetry * len(self.patterns)]).to(torch.int32)
         m = self.embedding(s)
-        m = torch.reshape(
-            m, [-1, self.num_patterns * self.num_symmetry, self.front_channels]
-        )
-        m = torch.sum(m, 1)
         y = self.backend_block(m)
         return y
