@@ -96,7 +96,7 @@ elif device == "cuda":
     model = torch.compile(model)
 
 scheduler = torch.optim.lr_scheduler.ExponentialLR(
-    optimizer, gamma = 0.8
+    optimizer, gamma = 0.85
 )
 
 
