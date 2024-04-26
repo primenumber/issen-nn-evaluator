@@ -76,7 +76,7 @@ class PatternBasedV2(nn.Module):
         x = torch.reshape(x.to(torch.float32), [-1, 1, 2, 8, 8])
         xp = x[:, :, 0, :, :]
         xo = x[:, :, 1, :, :]
-        x = xp + 2 * xo
+        x = xp + 2.0 * xo
         x0 = x
         x1 = torch.transpose(x, 2, 3)
         x01 = torch.cat((x0, x1), dim=1)
