@@ -122,19 +122,28 @@ test_dataloader = DataLoader(
     test_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count()
 )
 
+def save_model(path, model, optimizer, scheduler, epoch):
+    print("Save model...")
+    state = {
+        'model_param': {
+            'front': front,
+            'middle': middle,
+            'back': back,
+        },
+        'state_dict': model.state_dict(),
+        'optimizer': optimizer,
+        'scheduler': scheduler,
+        'epoch': epoch,
+    }
+    torch.save(state, ckpt_path)
+
+save_model(model_path, model, optimizer, scheduler, 0)
+
 for t in range(start_epoch, epochs):
     print(f"Epoch {t+1}")
     train_loop(train_dataloader, model, loss_fn, optimizer, t)
     test_loop(test_dataloader, model, loss_fn, t)
     scheduler.step()
-    print("Save tmp model...")
-    state = {
-        'state_dict': model.state_dict(),
-        'optimizer': optimizer,
-        'scheduler': scheduler,
-        'epoch': t,
-    }
-    torch.save(state, ckpt_path)
+    save_model(ckpt_path, model, optimizer, scheduler, t)
 print("Save model...")
-torch.save(model.state_dict(), model_path)
-print("Done!")
+save_model(model_path, model, optimizer, scheduler, epochs)
