@@ -40,10 +40,10 @@ class ReversiDataset(Dataset):
     def __getitem__(self, idx: int):
         player_bits = list(map(int, format(self._players[idx], "064b")))
         opponent_bits = list(map(int, format(self._opponents[idx], "064b")))
-        X = torch.zeros([2, 64], dtype=torch.int32)
+        X = torch.zeros([2, 64], dtype=torch.int8)
         y = torch.zeros([1], dtype=self._dtype)
-        X[0] = torch.tensor(player_bits, dtype=torch.int32)
-        X[1] = torch.tensor(opponent_bits, dtype=torch.int32)
+        X[0] = torch.tensor(player_bits, dtype=torch.int8)
+        X[1] = torch.tensor(opponent_bits, dtype=torch.int8)
         X = torch.reshape(X, [2, 8, 8])
         if random.random() > 0.5:
             X = torch.transpose(X, 1, 2)
