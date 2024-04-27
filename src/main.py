@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import time
 import random
@@ -71,11 +72,13 @@ def test_loop(dataloader, model, loss_fn, epoch):
     writer.add_scalar('Loss/test', test_loss, epoch + 1)
 
 
+current_time = datetime.now()
+
 front = 128
 middle = 64
 back = 32
 
-model_path = f"workdir/nnue_{front}x{middle}x{back}.pth"
+model_path = f"workdir/nnue_{front}x{middle}x{back}_{current_time}.pth"
 ckpt_path = f"workdir/nnue_{front}x{middle}x{back}_ckpt.pth"
 
 if os.path.isfile(ckpt_path):
@@ -136,8 +139,6 @@ def save_model(path, model, optimizer, scheduler, epoch):
         'epoch': epoch,
     }
     torch.save(state, ckpt_path)
-
-save_model(model_path, model, optimizer, scheduler, 0)
 
 for t in range(start_epoch, epochs):
     print(f"Epoch {t+1}")
