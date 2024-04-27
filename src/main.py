@@ -146,5 +146,4 @@ for t in range(start_epoch, epochs):
     test_loop(test_dataloader, model, loss_fn, t)
     scheduler.step()
     save_model(ckpt_path, model, optimizer, scheduler, t)
-print("Save model...")
 save_model(model_path, model, optimizer, scheduler, epochs)
