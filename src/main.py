@@ -29,8 +29,6 @@ print(f"Using {device} device")
 
 dtype = torch.bfloat16
 
-writer = SummaryWriter()
-
 def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     num_batches = len(dataloader)
     size = len(dataloader.dataset)
@@ -124,6 +122,8 @@ train_dataloader = DataLoader(
 test_dataloader = DataLoader(
     test_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count()
 )
+
+writer = SummaryWriter()
 
 def save_model(path, model, optimizer, scheduler, epoch):
     print("Save model...")
