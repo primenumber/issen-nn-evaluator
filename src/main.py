@@ -126,7 +126,7 @@ test_dataloader = DataLoader(
 writer = SummaryWriter()
 
 def save_model(path, model, optimizer, scheduler, epoch):
-    print("Save model to {path}...")
+    print(f"Save model to {path}...")
     state = {
         'model_param': {
             'front': front,
