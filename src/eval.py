@@ -24,8 +24,14 @@ print(f"Using {device} device")
 
 dtype = torch.bfloat16
 
-model = torch.load(sys.argv[1])["model"]
-model.eval()
+saved = torch.load(sys.argv[1])
+mparam = saved["model_param"]
+front = mparam["front"]
+middle = mparam["middle"]
+back = mparam["back"]
+model = PatternBasedV2(front, middle, back)
+model.load_state_dict(saved["state_dict"])
+model.to(device)
 
 
 def test_loop(dataloader, model):
