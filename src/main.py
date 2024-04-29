@@ -70,6 +70,10 @@ def test_loop(dataloader, model, loss_fn, epoch):
     writer.add_scalar('Loss/test', test_loss, epoch + 1)
 
 
+def cosine_with_warmup(epoch):
+    return 0.9 ** epoch * min(1.0, (epoch + 1) * 0.2)
+
+
 current_time = datetime.now()
 
 front = 128
@@ -97,8 +101,8 @@ if use_ipex:
 elif device == "cuda":
     model = torch.compile(model)
 
-scheduler = torch.optim.lr_scheduler.ExponentialLR(
-    optimizer, gamma = 0.85
+scheduler = torch.optim.lr_scheduler.LambdaLR(
+    optimizer, cosine_with_warmup
 )
 
 
