@@ -79,18 +79,19 @@ back = 32
 model_path = f"workdir/nnue_{front}x{middle}x{back}_{current_time}.pth"
 ckpt_path = f"workdir/nnue_{front}x{middle}x{back}_ckpt.pth"
 
+model = PatternBasedV2(front, middle, back).to(device)
+
 if os.path.isfile(ckpt_path):
     print("Load from ckpt")
     state = torch.load(ckpt_path, device)
-    model = state['model']
-    #optimizer = state['optimizer']
-    #scheduler = state['scheduler']
+    model.load_state_dict(state['state_dict'])
+    optimizer = state['optimizer']
+    scheduler = state['scheduler']
     start_epoch = state['epoch'] + 1
 else:
-    model = PatternBasedV2(front, middle, back).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
     start_epoch = 0
 
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
 if use_ipex:
     model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
 elif device == "cuda":
