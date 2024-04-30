@@ -73,7 +73,7 @@ def test_loop(dataloader, model, loss_fn, epoch):
 
 current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-front = 128
+front = 32
 middle = 64
 back = 32
 
@@ -106,7 +106,7 @@ scheduler = torch.optim.lr_scheduler.LambdaLR(
 loss_fn = nn.MSELoss()
 
 batch_size = 16384
-epochs = 30
+epochs = 60
 
 train_data_file = "workdir/dataset_221009_train.txt"
 test_data_file = "workdir/dataset_221009_test.txt"
