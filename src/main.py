@@ -71,7 +71,7 @@ def test_loop(dataloader, model, loss_fn, epoch):
     writer.add_scalar('Loss/test', test_loss, epoch + 1)
 
 
-current_time = datetime.now()
+current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
 front = 128
 middle = 64
@@ -140,7 +140,7 @@ def save_model(path, model, optimizer, scheduler, epoch):
         'scheduler': scheduler,
         'epoch': epoch,
     }
-    torch.save(state, ckpt_path)
+    torch.save(state, path)
 
 for t in range(start_epoch, epochs):
     print(f"Epoch {t+1}")
