@@ -8,6 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from model import PatternBasedV2
 from dataset import ReversiDataset
+from lr_schedule import cosine_with_warmup
 
 use_ipex = "USE_IPEX" in os.environ
 if use_ipex:

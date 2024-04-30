@@ -11,6 +11,7 @@ import numpy as np
 
 from model import PatternBasedV2
 from dataset import ReversiDataset
+from lr_schedule import cosine_with_warmup
 
 use_ipex = "USE_IPEX" in os.environ
 if use_ipex:
@@ -68,10 +69,6 @@ def test_loop(dataloader, model, loss_fn, epoch):
     test_loss /= num_batches
     print(f"Test Avg loss: {test_loss:>8f}")
     writer.add_scalar('Loss/test', test_loss, epoch + 1)
-
-
-def cosine_with_warmup(epoch):
-    return 0.9 ** epoch * min(1.0, (epoch + 1) * 0.2)
 
 
 current_time = datetime.now()
