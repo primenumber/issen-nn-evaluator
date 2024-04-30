@@ -34,6 +34,14 @@ model = PatternBasedV2(front, middle, back)
 model.load_state_dict(saved["state_dict"])
 model.to(device)
 
+def eval_sample():
+    board = { "player": 18324862011005731840, "opponent": 13514196661811216 }
+    player_bits = list(map(int, format(board["player"], "064b")))
+    opponent_bits = list(map(int, format(board["opponent"], "064b")))
+    X = torch.tensor([[player_bits, opponent_bits]], dtype=torch.int8).to(device)
+    pred = model(X)
+    print(pred.item())
+    exit()
 
 def test_loop(dataloader, model):
     size = len(dataloader.dataset)
@@ -61,6 +69,8 @@ def test_loop(dataloader, model):
         avg_diff = sum(dd) / len(dd)
         print(sq_diff, avg_diff)
                 
+
+eval_sample()
 
 test_data_file = "workdir/dataset_221009_test.txt"
 stones_filter = {i for i in range(14, 60)}
