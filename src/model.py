@@ -3,26 +3,26 @@ from torch import nn
 import typing
 
 
-def generate_patterns() -> list[list[int]]:
-    base_pattern_bits = [
-        0x0000_0000_0000_40FF,
-        0x0000_0000_0000_FF00,
-        0x0000_0000_00FF_0000,
-        0x0000_0000_FF00_0000,
-        0x0000_0000_0000_0F1F,
-        0x0000_0000_0003_070F,
-        0x0000_0001_0306_0C18,
-        0x0000_0102_0408_1020,
-        0x0001_0204_0810_2040,
-        0x0102_0408_1020_4080,
-        0x0000_0000_0000_1CBD,
-        0x0000_0000_080E_0703,
-        0x0000_0000_0007_0707,
-        0x0000_0000_0000_04FF,
-        0x0000_0000_0806_0F03,
-        0x0000_0000_0202_1F03,
-    ]
+BASE_PATTERN_BITS = [
+    0x0000_0000_0000_40FF,
+    0x0000_0000_0000_FF00,
+    0x0000_0000_00FF_0000,
+    0x0000_0000_FF00_0000,
+    0x0000_0000_0000_0F1F,
+    0x0000_0000_0003_070F,
+    0x0000_0001_0306_0C18,
+    0x0000_0102_0408_1020,
+    0x0001_0204_0810_2040,
+    0x0102_0408_1020_4080,
+    0x0000_0000_0000_1CBD,
+    0x0000_0000_080E_0703,
+    0x0000_0000_0007_0707,
+    0x0000_0000_0000_04FF,
+    0x0000_0000_0806_0F03,
+    0x0000_0000_0202_1F03,
+]
 
+def generate_patterns() -> list[list[int]]:
     def to_idx(bits: int) -> list[int]:
         result = []
         for i in range(64):
@@ -30,7 +30,7 @@ def generate_patterns() -> list[list[int]]:
                 result.append(i)
         return result
 
-    return [to_idx(bits) for bits in base_pattern_bits]
+    return [to_idx(bits) for bits in BASE_PATTERN_BITS]
 
 
 def generate_pattern_indexer(patterns: list[list[int]]) -> tuple[list[list[int]], list[int], int]:
