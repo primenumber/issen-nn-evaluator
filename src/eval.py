@@ -41,7 +41,6 @@ def eval_sample():
     X = torch.tensor([[player_bits, opponent_bits]], dtype=torch.int8).to(device)
     pred = model(X)
     print(pred.item())
-    exit()
 
 def test_loop(dataloader, model):
     size = len(dataloader.dataset)
