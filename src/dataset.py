@@ -30,28 +30,24 @@ class ReversiDataset(Dataset):
                     break
             print()
         self._dtype = dtype
-        self._players = np.array(players, dtype=np.uint64)
-        self._opponents = np.array(opponents, dtype=np.uint64)
+        self._players = np.reshape(np.frombuffer(np.array(players, dtype='<u8').tobytes(), dtype=np.uint8), [len(players), 8])
+        self._opponents = np.reshape(np.frombuffer(np.array(opponents, dtype='<u8').tobytes(), dtype=np.uint8), [len(opponents), 8])
         self._scores = np.array(scores, dtype=np.int32)
 
     def __len__(self):
         return len(self._scores)
 
     def __getitem__(self, idx: int):
-        player_bits = list(map(int, format(self._players[idx], "064b")))
-        opponent_bits = list(map(int, format(self._opponents[idx], "064b")))
-        X = torch.zeros([2, 64], dtype=torch.int8)
-        y = torch.zeros([1], dtype=self._dtype)
-        X[0] = torch.tensor(player_bits, dtype=torch.int8)
-        X[1] = torch.tensor(opponent_bits, dtype=torch.int8)
-        X = torch.reshape(X, [2, 8, 8])
+        x = np.stack((np.unpackbits(self._players[idx]), np.unpackbits(self._opponents[idx])))
+        X = torch.tensor(x, dtype=torch.uint8)
+        X = torch.reshape(X, [-1, 2, 8, 8])
         if random.random() > 0.5:
-            X = torch.transpose(X, 1, 2)
-        if random.random() > 0.5:
-            X = torch.flip(X, [1])
+            X = torch.transpose(X, 2, 3)
         if random.random() > 0.5:
             X = torch.flip(X, [2])
-        X = torch.reshape(X, [2, 64])
+        if random.random() > 0.5:
+            X = torch.flip(X, [3])
+        X = torch.reshape(X, [-1, 2, 64])
+        y = torch.zeros([1], dtype=self._dtype)
         y[0] = int(self._scores[idx])
         return X, y
-
