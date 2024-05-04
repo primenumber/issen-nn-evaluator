@@ -11,8 +11,7 @@ class ReversiDataset(Dataset):
     ):
         with open(dataset_file) as f:
             n = int(f.readline())
-            players = []
-            opponents = []
+            boards = []
             scores = []
             for i in range(n):
                 if i % 65536 == 0:
@@ -23,31 +22,29 @@ class ReversiDataset(Dataset):
                 stone_count = bin(player | opponent).count("1")
                 if stone_count not in stone_filter:
                     continue
-                players.append(player)
-                opponents.append(opponent)
+                boards.append([player, opponent])
                 scores.append(score)
-                if len(players) == limit:
+                if len(boards) == limit:
                     break
             print()
         self._dtype = dtype
-        self._players = np.reshape(np.frombuffer(np.array(players, dtype='<u8').tobytes(), dtype=np.uint8), [len(players), 8])
-        self._opponents = np.reshape(np.frombuffer(np.array(opponents, dtype='<u8').tobytes(), dtype=np.uint8), [len(opponents), 8])
+        self._boards = np.reshape(np.frombuffer(np.array(boards, dtype='<u8').tobytes(), dtype=np.uint8), [len(boards), 16])
         self._scores = np.array(scores, dtype=np.int32)
 
     def __len__(self):
         return len(self._scores)
 
     def __getitem__(self, idx: int):
-        x = np.stack((np.unpackbits(self._players[idx]), np.unpackbits(self._opponents[idx])))
+        x = np.unpackbits(self._boards[idx])
         X = torch.tensor(x, dtype=torch.uint8)
-        X = torch.reshape(X, [-1, 2, 8, 8])
+        X = torch.reshape(X, [2, 8, 8])
         if random.random() > 0.5:
-            X = torch.transpose(X, 2, 3)
+            X = torch.transpose(X, 1, 2)
+        if random.random() > 0.5:
+            X = torch.flip(X, [1])
         if random.random() > 0.5:
             X = torch.flip(X, [2])
-        if random.random() > 0.5:
-            X = torch.flip(X, [3])
-        X = torch.reshape(X, [-1, 2, 64])
+        X = torch.reshape(X, [2, 64])
         y = torch.zeros([1], dtype=self._dtype)
         y[0] = int(self._scores[idx])
         return X, y
