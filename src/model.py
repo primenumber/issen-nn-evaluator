@@ -63,7 +63,7 @@ class PatternBasedV2(nn.Module):
         self.num_symmetry = 8
         self.num_patterns = len(self.patterns)
         self.back_channels = back_channels
-        self.embedding = nn.EmbeddingBag(total_idx, front_channels, max_norm = 4.0, mode="sum")
+        self.embedding = nn.EmbeddingBag(total_idx, front_channels, mode="sum")
         self.backend_block = nn.Sequential(
             nn.Linear(front_channels, middle_channels),
             nn.ReLU(),
