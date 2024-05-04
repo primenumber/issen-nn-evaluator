@@ -51,6 +51,36 @@ def generate_pattern_indexer(patterns: list[list[int]]) -> tuple[list[list[int]]
     return (mat, bias, offset)
 
 
+class PatternBasedLinear(nn.Module):
+    def __init__(self):
+        super(PatternBasedLinear, self).__init__()
+        self.patterns = generate_patterns()
+        idx_mat, idx_bias, total_idx = generate_pattern_indexer(self.patterns)
+        self.indexer_mat = torch.transpose(torch.tensor(idx_mat, dtype=torch.int32), 0, 1).to(torch.float32)
+        self.indexer_bias = torch.reshape(torch.tensor(idx_bias, dtype=torch.int32), [1, len(self.patterns)])
+        self.input_channels = 2
+        self.num_symmetry = 8
+        self.num_patterns = len(self.patterns)
+        self.embedding = nn.EmbeddingBag(total_idx, 1, mode="sum")
+
+    def forward(self, x):
+        xp = x[:, 0, :]
+        xo = x[:, 1, :]
+        x = xp + 2 * xo
+        x0 = torch.reshape(x.to(torch.float32), [-1, 1, 8, 8])
+        x1 = torch.transpose(x0, 2, 3)
+        x01 = torch.cat((x0, x1), dim=1)
+        x23 = torch.flip(x01, [2])
+        x03 = torch.cat((x01, x23), dim=1)
+        x47 = torch.flip(x03, [3])
+        x07 = torch.cat((x03, x47), dim=1)
+        vx = torch.reshape(x07, [-1, 64])
+        s = torch.matmul(vx, self.indexer_mat.to(x.device)) + self.indexer_bias.to(x.device)
+        s = torch.reshape(s, [-1, self.num_symmetry * len(self.patterns)]).to(torch.int32)
+        y = self.embedding(s)
+        return y
+
+
 class PatternBasedV2(nn.Module):
     def __init__(self, front_channels, middle_channels, back_channels):
         super(PatternBasedV2, self).__init__()
