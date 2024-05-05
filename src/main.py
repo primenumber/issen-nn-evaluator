@@ -90,7 +90,7 @@ if os.path.isfile(ckpt_path):
     scheduler = state['scheduler']
     start_epoch = state['epoch'] + 1
 else:
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-3, weight_decay=1e-4)
     start_epoch = 0
 
 if use_ipex:
@@ -105,8 +105,8 @@ scheduler = torch.optim.lr_scheduler.LambdaLR(
 
 loss_fn = nn.MSELoss()
 
-batch_size = 16384
-epochs = 60
+batch_size = 8192
+epochs = 100
 
 train_data_file = "workdir/dataset_221009_train.txt"
 test_data_file = "workdir/dataset_221009_test.txt"
