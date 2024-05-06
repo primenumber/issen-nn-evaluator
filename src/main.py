@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 
 from model import PatternBasedV2
-from dataset import ReversiDataset
+from dataset import ReversiDataset, data_augumentation
 from lr_schedule import cosine_with_warmup
 
 use_ipex = "USE_IPEX" in os.environ
@@ -41,6 +41,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
             print(f"Time per 100 batch: {end - start:>5f}s, [{current:>5d}/{size:>5d}]")
 
         X = X.to(device)
+        X = data_augumentation(X)
         y = y.to(device)
         pred = model(X)
         loss = loss_fn(pred, y)
@@ -62,6 +63,7 @@ def test_loop(dataloader, model, loss_fn, epoch):
     with torch.no_grad():
         for X, y in dataloader:
             X = X.to(device)
+            X = data_augumentation(X)
             y = y.to(device)
             pred = model(X)
             test_loss += loss_fn(pred, y).item()

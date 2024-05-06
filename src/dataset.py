@@ -35,16 +35,18 @@ class ReversiDataset(Dataset):
         return len(self._scores)
 
     def __getitem__(self, idx: int):
-        x = np.unpackbits(self._boards[idx])
-        X = torch.tensor(x, dtype=torch.uint8)
-        X = torch.reshape(X, [2, 8, 8])
-        if random.random() > 0.5:
-            X = torch.transpose(X, 1, 2)
-        if random.random() > 0.5:
-            X = torch.flip(X, [1])
-        if random.random() > 0.5:
-            X = torch.flip(X, [2])
-        X = torch.reshape(X, [2, 64])
+        X = torch.tensor(np.unpackbits(self._boards[idx]), dtype=torch.uint8)
         y = torch.zeros([1], dtype=self._dtype)
         y[0] = int(self._scores[idx])
         return X, y
+
+
+def data_augumentation(t: torch.Tensor) -> torch.Tensor:
+    X = torch.reshape(t, [-1, 2, 8, 8])
+    if random.random() > 0.5:
+        X = torch.transpose(X, 2, 3)
+    if random.random() > 0.5:
+        X = torch.flip(X, [2])
+    if random.random() > 0.5:
+        X = torch.flip(X, [3])
+    return torch.reshape(X, [-1, 2, 64])
