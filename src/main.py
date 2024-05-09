@@ -28,7 +28,7 @@ else:
 
 print(f"Using {device} device")
 
-dtype = torch.bfloat16
+dtype = torch.float32
 
 def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     num_batches = len(dataloader)
