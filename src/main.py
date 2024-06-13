@@ -123,10 +123,10 @@ test_data = ReversiDataset(test_data_file, dtype, stones_filter, 33554432)
 #test_data = ReversiDataset(test_data_file, dtype, stones_filter, 1048576)
 
 train_dataloader = DataLoader(
-    train_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count(),
+    train_data, batch_size=batch_size, num_workers=os.cpu_count(),
 )
 test_dataloader = DataLoader(
-    test_data, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count(),
+    test_data, batch_size=batch_size, num_workers=os.cpu_count(),
 )
 
 writer = SummaryWriter()
