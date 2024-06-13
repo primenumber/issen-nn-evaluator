@@ -45,6 +45,8 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
         y = y.to(device)
         pred = model(X)
         loss = loss_fn(pred, y)
+        for w in model.parameters():
+            loss = loss + 3e-7 * torch.norm(w) ** 2
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -92,7 +94,7 @@ if os.path.isfile(ckpt_path):
     scheduler = state['scheduler']
     start_epoch = state['epoch'] + 1
 else:
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-3, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-3, weight_decay=2e-4)
     start_epoch = 0
 
 if use_ipex:
