@@ -31,6 +31,7 @@ else:
 
 print(f"Using {device} device")
 
+writer = SummaryWriter()
 
 def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     num_batches = len(dataloader)
