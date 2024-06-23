@@ -58,21 +58,21 @@ def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     print(f"Time per Epoch: {end - start:>5f}s")
 
 
-def test_loop(dataloader, model, loss_fn, epoch):
+def validation_loop(dataloader, model, loss_fn, epoch):
     num_batches = len(dataloader)
     size = len(dataloader.dataset)
-    test_loss = 0
+    validation_loss = 0
     with torch.no_grad():
         for X, y in dataloader:
             X = X.to(device)
             X = data_augumentation(X)
             y = y.to(device)
             pred = model(X)
-            test_loss += loss_fn(pred, y).item()
+            validation_loss += loss_fn(pred, y).item()
 
-    test_loss /= num_batches
-    print(f"Test Avg loss: {test_loss:>8f}")
-    writer.add_scalar('Loss/test', test_loss, epoch + 1)
+    validation_loss /= num_batches
+    print(f"Validation Avg loss: {validation_loss:>8f}")
+    writer.add_scalar('Loss/validation', validation_loss, epoch + 1)
 
 
 current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -112,21 +112,21 @@ loss_fn = nn.MSELoss()
 batch_size = 8192
 epochs = 100
 
-train_data_file = "workdir/dataset_221009_train.txt"
-test_data_file = "workdir/dataset_221009_test.txt"
+train_data_file = "workdir/dataset_240505_train.txt"
+validation_data_file = "workdir/dataset_240505_validation.txt"
 
 # stones_filter = {i for i in range(50, 55)}
 stones_filter = {i for i in range(14, 60)}
 train_data = ReversiDataset(train_data_file, dtype, stones_filter, -1)
-test_data = ReversiDataset(test_data_file, dtype, stones_filter, 33554432)
+validation_data = ReversiDataset(validation_data_file, dtype, stones_filter, 33554432)
 #train_data = ReversiDataset(train_data_file, dtype, stones_filter, 1048576)
-#test_data = ReversiDataset(test_data_file, dtype, stones_filter, 1048576)
+#validation_data = ReversiDataset(validation_data_file, dtype, stones_filter, 1048576)
 
 train_dataloader = DataLoader(
     train_data, batch_size=batch_size, num_workers=os.cpu_count(),
 )
-test_dataloader = DataLoader(
-    test_data, batch_size=batch_size, num_workers=os.cpu_count(),
+validation_dataloader = DataLoader(
+    validation_data, batch_size=batch_size, num_workers=os.cpu_count(),
 )
 
 writer = SummaryWriter()
@@ -149,7 +149,7 @@ def save_model(path, model, optimizer, scheduler, epoch):
 for t in range(start_epoch, epochs):
     print(f"Epoch {t+1}")
     train_loop(train_dataloader, model, loss_fn, optimizer, t)
-    test_loop(test_dataloader, model, loss_fn, t)
+    validation_loop(validation_dataloader, model, loss_fn, t)
     scheduler.step()
     save_model(ckpt_path, model, optimizer, scheduler, t)
 save_model(model_path, model, optimizer, scheduler, epochs)
