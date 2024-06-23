@@ -21,14 +21,16 @@ if use_ipex:
 
 if use_ipex:
     device = "xpu"
+    dtype = torch.bfloat16
 elif torch.cuda.is_available():
     device = "cuda"
+    dtype = torch.float32
 else:
     device = "cpu"
+    dtype = torch.float32
 
 print(f"Using {device} device")
 
-dtype = torch.float32
 
 def train_loop(dataloader, model, loss_fn, optimizer, epoch):
     num_batches = len(dataloader)
