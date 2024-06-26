@@ -32,14 +32,12 @@ output_dir_path = Path(sys.argv[2])
 
 output_dir_path.mkdir()
 
-dtype = torch.bfloat16
-
 saved = torch.load(model_path)
 mparam = saved["model_param"]
 front = mparam["front"]
 middle = mparam["middle"]
 back = mparam["back"]
-model = PatternBasedV2(front, middle, back)
+model = torch.compile(PatternBasedV2(front, middle, back))
 model.load_state_dict(saved["state_dict"])
 model.to(device)
 
@@ -59,7 +57,8 @@ for param_tensor in model.state_dict():
     total_params += torch.numel(tensor)
     tensor_flat = torch.flatten(tensor).to(torch.float32).to("cpu")
     print(param_tensor, tensor.size(), tensor.min(), tensor.max(), tensor_flat)
-    with Path(output_dir_path, param_tensor).open("wb") as f:
+    name = param_tensor.removeprefix("_orig_mod.")
+    with Path(output_dir_path, name).open("wb") as f:
         tensor_flat.numpy().ravel().tofile(f)
 
 print(total_params)

@@ -23,14 +23,15 @@ else:
 
 print(f"Using {device} device")
 
-dtype = torch.bfloat16
+#dtype = torch.bfloat16
+dtype = torch.float32
 
 saved = torch.load(sys.argv[1])
 mparam = saved["model_param"]
 front = mparam["front"]
 middle = mparam["middle"]
 back = mparam["back"]
-model = PatternBasedV2(front, middle, back)
+model = torch.compile(PatternBasedV2(front, middle, back).to("cpu"))
 model.load_state_dict(saved["state_dict"])
 model.to(device)
 
@@ -71,7 +72,7 @@ def test_loop(dataloader, model):
 
 eval_sample()
 
-test_data_file = "workdir/dataset_221009_test.txt"
+test_data_file = "workdir/dataset_240505_test.txt"
 stones_filter = {i for i in range(14, 60)}
 test_data = ReversiDataset(test_data_file, dtype, stones_filter, 33554432)
 batch_size = 4096
