@@ -62,6 +62,7 @@ class PatternBasedLinear(nn.Module):
         self.num_symmetry = 8
         self.num_patterns = len(self.patterns)
         self.embedding = nn.EmbeddingBag(total_idx, 1, mode="sum")
+        self.linear = nn.Linear(1, 1)
 
     def forward(self, x):
         xp = x[:, 0, :]
@@ -78,7 +79,7 @@ class PatternBasedLinear(nn.Module):
         s = torch.matmul(vx, self.indexer_mat.to(x.device)) + self.indexer_bias.to(x.device)
         s = torch.reshape(s, [-1, self.num_symmetry * len(self.patterns)]).to(torch.int32)
         y = self.embedding(s)
-        return y
+        return self.linear(y)
 
 
 class PatternBasedV2(nn.Module):

@@ -1,6 +1,6 @@
 services:
   devel:
-    build: .
+    image: pytorch/pytorch:2.2.2-cuda12.1-cudnn8-devel
     deploy:
       resources:
         reservations:
@@ -10,6 +10,7 @@ services:
     volumes:
       - .:/workspace
     shm_size: '16gb'
+    network_mode: 'host'
   devel-intel:
     environment:
       - USE_IPEX=true
