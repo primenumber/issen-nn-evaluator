@@ -80,12 +80,12 @@ def validation_loop(dataloader, model, loss_fn, epoch):
 
 current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-front = 32
-middle = 64
+front = 128
+middle = 32
 back = 32
 
-model_path = f"workdir/nnue_{front}x{middle}x{back}_{current_time}.pth"
-ckpt_path = f"workdir/nnue_{front}x{middle}x{back}_ckpt.pth"
+model_path = f"workdir/nnue_symm_{front}x{middle}x{back}_{current_time}.pth"
+ckpt_path = f"workdir/nnue_symm_{front}x{middle}x{back}_ckpt.pth"
 
 model = PatternBasedV2(front, middle, back).to(device)
 
