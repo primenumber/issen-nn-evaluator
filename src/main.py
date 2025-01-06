@@ -21,7 +21,7 @@ if use_ipex:
 
 if use_ipex:
     device = "xpu"
-    dtype = torch.bfloat16
+    dtype = torch.float32
 elif torch.cuda.is_available():
     device = "cuda"
     dtype = torch.float32
