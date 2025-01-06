@@ -37,7 +37,7 @@ mparam = saved["model_param"]
 front = mparam["front"]
 middle = mparam["middle"]
 back = mparam["back"]
-model = torch.compile(PatternBasedV2(front, middle, back))
+model = PatternBasedV2(front, middle, back)
 model.load_state_dict(saved["state_dict"])
 model.to(device)
 
