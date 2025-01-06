@@ -31,7 +31,16 @@ mparam = saved["model_param"]
 front = mparam["front"]
 middle = mparam["middle"]
 back = mparam["back"]
-model = torch.compile(PatternBasedV2(front, middle, back).to("cpu"))
+model = PatternBasedV2(front, middle, back)
+
+if use_ipex:
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-3, weight_decay=2e-4)
+    model, optimizer = ipex.optimize(model, dtype=dtype, optimizer=optimizer)
+elif device == "cuda":
+    model = torch.compile(model)
+else:
+    model = torch.compile(model.to("cpu"))
+
 model.load_state_dict(saved["state_dict"])
 model.to(device)
 
