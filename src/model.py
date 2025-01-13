@@ -113,6 +113,7 @@ class PatternBasedV2(nn.Module):
         self.back_channels = back_channels
         self.embedding = nn.EmbeddingBag(total_idx, front_channels, mode="sum")
         self.backend_block = nn.Sequential(
+            nn.ReLU(),
             nn.Linear(self.num_symmetry * front_channels, middle_channels),
             nn.ReLU(),
             nn.Linear(middle_channels, back_channels),
