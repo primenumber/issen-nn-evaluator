@@ -19,6 +19,6 @@ services:
     devices:
       - /dev/dri:/dev/dri
     image: "intel/intel-extension-for-pytorch:2.1.30-xpu"
-    shm_size: '16gb'
+    shm_size: '24gb'
     volumes:
       - .:/workspace
