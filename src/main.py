@@ -81,7 +81,7 @@ def validation_loop(dataloader, model, loss_fn, epoch):
 current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
 front = 128
-middle = 32
+middle = 16
 back = 32
 
 model_path = f"workdir/nnue_symm_{front}x{middle}x{back}_{current_time}.pth"
@@ -97,7 +97,7 @@ if os.path.isfile(ckpt_path):
     scheduler = state['scheduler']
     start_epoch = state['epoch'] + 1
 else:
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-3, weight_decay=2e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-3, weight_decay=1e-4)
     start_epoch = 0
 
 if use_ipex:
@@ -126,10 +126,10 @@ validation_data = ReversiDataset(validation_data_file, dtype, stones_filter, 335
 #validation_data = ReversiDataset(validation_data_file, dtype, stones_filter, 1048576)
 
 train_dataloader = DataLoader(
-    train_data, batch_size=batch_size, num_workers=os.cpu_count(),
+    train_data, batch_size=batch_size, shuffle=True,
 )
 validation_dataloader = DataLoader(
-    validation_data, batch_size=batch_size, num_workers=os.cpu_count(),
+    validation_data, batch_size=batch_size, shuffle=True,
 )
 
 writer = SummaryWriter()
